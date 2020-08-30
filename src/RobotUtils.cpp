@@ -203,7 +203,9 @@ std::vector<Vector3> ActiveContactFinder(const Robot & SimRobot, const std::vect
     for (int j = 0; j < NonlinearOptimizerInfo::RobotLinkInfo[i].LocalContacts.size(); j++){
       if(RobotContactInfo[i].LocalContactStatus[j]){
         Vector3 LinkiPjPos;
-        SimRobot.GetWorldPosition(NonlinearOptimizerInfo::RobotLinkInfo[i].LocalContacts[j], NonlinearOptimizerInfo::RobotLinkInfo[i].LinkIndex, LinkiPjPos);
+        SimRobot.GetWorldPosition(NonlinearOptimizerInfo::RobotLinkInfo[i].LocalContacts[j], 
+                                  NonlinearOptimizerInfo::RobotLinkInfo[i].LinkIndex, 
+                                  LinkiPjPos);
         ActContacts.push_back(LinkiPjPos);
       }
     }

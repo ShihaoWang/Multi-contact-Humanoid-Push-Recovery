@@ -779,6 +779,7 @@ struct SimPara{
   int     PlanStageIndex;
   int     PlanEndEffectorIndex;    // This PlanEndEffectorIndex saves successful end effector for push recovery.
   double  SimTime;
+  double  FailureTime;
   bool    TransPathFeasiFlag;
   int     SwingLinkInfoIndex;
   Vector3 CurrentContactPos;

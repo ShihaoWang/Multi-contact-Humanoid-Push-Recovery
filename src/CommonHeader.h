@@ -31,7 +31,7 @@ void RobotConfigWriter(const std::vector<double> & Config, const string &user_pa
 std::vector<int> TorsoLinkReader(const string & TorsoLinkFilePath);
 void StateTrajAppender(const char *stateTrajFile_Name, const double & Time_t, const std::vector<double> & Configuration);
 void PushInfoFileAppender(const double & SimTime, const double & Fx_t, const double & Fy_t, const double & Fz_t, const string & SpecificPath);
-void StateLogger(WorldSimulation & Sim, FailureStateInfo & FailureStateObj, LinearPath & CtrlStateTraj, LinearPath & PlanStateTraj, LinearPath & FailureStateTraj, std::vector<double> & qDes, const SimPara & SimParaObj);
+void StateLogger(WorldSimulation & Sim, LinearPath & CtrlStateTraj, LinearPath & PlanStateTraj, std::vector<double> & qDes, const SimPara & SimParaObj);
 
 /* 3. Robot Utilities*/
 int FileIndexFinder(bool UpdateFlag, int WriteInt);
@@ -62,9 +62,10 @@ void KineticEnergyAppender(const char *KEFile_Name, double Time_t, double KE);
 double EdgeProjMagnitude(double cur_s,  Vector3 InitxDir, Vector3 GoalDir);
 
 /* 4. Main Simulation*/
-LinearPath InitialSimulation(WorldSimulation & Sim, const SimPara & SimParaObj);
+void InitialSimulation(WorldSimulation & Sim, const SimPara & SimParaObj, LinearPath & CtrlStateTraj, LinearPath & PlanStateTraj);
 void PushImposer(WorldSimulation & Sim, const double & CurTime, const SimPara & SimParaObj, const bool & FailureFlag);
 int SimulationTest(WorldSimulation & Sim, const std::vector<ContactStatusInfo> & _InitContactInfo, ReachabilityMap & RMObject, SelfLinkGeoInfo & SelfLinkGeoObj, SimPara & _SimParaObj);
+int FailureTest(WorldSimulation & Sim, const std::vector<ContactStatusInfo> & InitContactInfo, ReachabilityMap & RMObject, SelfLinkGeoInfo & SelfLinkGeoObj, SimPara & SimParaObj);
 
 /* 5. Convex Polytope Functions*/
 FacetInfo FlatConvexHullGeneration(const std::vector<Vector3> & ContactPoints);

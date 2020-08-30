@@ -68,7 +68,15 @@ add_executable(MyApp
                src/EnviGeometry.cpp
 	       src/RobotStateFiler.cpp
 	       src/RobotUtils.cpp
-	       src/ConvexPolytope.cpp)
+	       src/ConvexPolytope.cpp
+	       src/SimulationTest.cpp
+	       src/SimulationRelated.cpp
+	       src/ControlReferenceGeneration.cpp
+	       src/TrajectoryPlanning.cpp
+	       src/LastStageConfigOptimization.cpp
+	       src/WholeBodyEstimation.cpp
+	       src/TransientPathGeneration.cpp
+               src/TrajectoryConfigOptimization.cpp)
 
 
 target_link_libraries(MyApp  ${KLAMPT_LIBRARIES} ${SNOPT_LIBRARIES} ${GUROBI_LIBRARIES} ${CILANTRO_LIBRARIES} ${GLEW_LIBRARY})

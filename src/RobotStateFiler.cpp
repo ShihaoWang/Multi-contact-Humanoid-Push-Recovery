@@ -131,8 +131,8 @@ void PushInfoFileAppender(const double & SimTime, const double & Fx_t, const dou
   return;
 }
 
-void StateLogger(WorldSimulation & Sim, FailureStateInfo & FailureStateObj, LinearPath & CtrlStateTraj, LinearPath & PlanStateTraj, LinearPath & FailureStateTraj, std::vector<double> & qDes, const SimPara & SimParaObj){
-  const char *FailureStateTrajStr_Name  = SimParaObj.FailureStateTrajStr.c_str();
+void StateLogger(WorldSimulation & Sim, LinearPath & CtrlStateTraj, LinearPath & PlanStateTraj, std::vector<double> & qDes, const SimPara & SimParaObj){
+  // const char *FailureStateTrajStr_Name  = SimParaObj.FailureStateTrajStr.c_str();
   const char *CtrlStateTrajStr_Name     = SimParaObj.CtrlStateTrajStr.c_str();
   const char *PlanStateTrajStr_Name     = SimParaObj.PlanStateTrajStr.c_str();
 
@@ -144,9 +144,9 @@ void StateLogger(WorldSimulation & Sim, FailureStateInfo & FailureStateObj, Line
   StateTrajAppender(PlanStateTrajStr_Name, Sim.time, qDes);
   PlanStateTraj.Append(Sim.time,    Config(qDes));
 
-  if(!FailureStateObj.FailureStateFlag){
-    FailureStateTraj.Append(Sim.time,    Sim.world->robots[0]->q);
-    StateTrajAppender(FailureStateTrajStr_Name, Sim.time, Sim.world->robots[0]->q);
-  }
+  // if(!FailureStateObj.FailureStateFlag){
+  //   FailureStateTraj.Append(Sim.time,    Sim.world->robots[0]->q);
+  //   StateTrajAppender(FailureStateTrajStr_Name, Sim.time, Sim.world->robots[0]->q);
+  // }
   return;
 }

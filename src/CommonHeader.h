@@ -45,7 +45,7 @@ std::vector<Vector3> ActiveContactFinder(const Robot & SimRobot, const std::vect
 // std::vector<double> YPRShifter(std::vector<double> OptConfig);
 void Vector3Writer(const std::vector<Vector3> & ContactPoints, const std::string & ContactPointFileName);
 std::vector<Vector3> BoxVertices(const Box3D & Box3DObj);
-std::vector<double> ConfigReferenceGene(const Robot & SimRobotObj,  double & InnerTime,
+std::pair<Config, Config> ConfigReferenceGene(const Robot & SimRobotObj,  double & InnerTime,
                                         ReachabilityMap & RMObject, SelfLinkGeoInfo & SelfLinkGeoObj,
                                         ControlReferenceInfo & ControlReference, SimPara & SimParaObj);
 bool FailureChecker(Robot & SimRobot, ReachabilityMap & RMObject);
@@ -101,7 +101,7 @@ bool TaskTrajectoryPlanningInner( const double & _sVal, double & _sNew,
                                   SimPara & _SimParaObj,
                                   const double & _StageTime,                        const double & _DampingRatio);
 /* 9. IK Controller*/
-std::vector<double> IKConfigOptimazation(const Robot & SimRobot, Config qDesInit, ReachabilityMap & RMObject, SelfLinkGeoInfo & SelfLinkGeoObj_, Vector3 GoalPos_, Vector3 GoalDir_, int SwingLinkInfoIndex_, double sCur, double EndEffectorProjx, double EndEffectorProjy, bool & OptFlag);
+std::vector<double> IKConfigOptimazation(const Robot & SimRobot, ReachabilityMap & RMObject, SelfLinkGeoInfo & SelfLinkGeoObj_, Vector3 GoalPos_, Vector3 GoalDir_, int SwingLinkInfoIndex_, double sCur, double EndEffectorProjx, double EndEffectorProjy, bool & OptFlag);
 /* 10. Cartesian Controller */
 std::vector<double> CartesianController(const Robot & SimRobot, const ControlReferenceInfo  & ControlReference, double InnerTime, double TimeStep);
 std::vector<double> SimpleCartesianControllerTest(const Robot & SimRobot, const std::vector<double> & InitConfig, const int & SwingLinkInfoIndex, double InnerTime, double TimeStep);

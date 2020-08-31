@@ -4,6 +4,7 @@
 #include <ode/ode.h>
 #include "Control/PathController.h"
 #include "Control/JointTrackingController.h"
+#include "Control/FeedforwardController.h"
 #include "NonlinearOptimizerInfo.h"
 
 int SimulationTest(WorldSimulation & Sim, const std::vector<ContactStatusInfo> & InitContactInfo, ReachabilityMap & RMObject, SelfLinkGeoInfo & SelfLinkGeoObj, SimPara & SimParaObj){
@@ -21,26 +22,28 @@ int SimulationTest(WorldSimulation & Sim, const std::vector<ContactStatusInfo> &
   double  CtrlStartTime   = 0.0;
 
   /* Override the default controller with a PolynomialPathController */
-  auto NewControllerPtr = std::make_shared<PolynomialPathController>(*Sim.world->robots[0]);
+  // auto NewControllerPtr = std::make_shared<PolynomialPathController>(*Sim.world->robots[0]);
+  auto NewControllerPtr = std::make_shared<RobotController>(*Sim.world->robots[0]);
   Sim.SetController(0, NewControllerPtr);
-  NewControllerPtr->SetConstant(InitConfig);
+  NewControllerPtr->SetPIDCommand(InitConfig);
 
   // Initial Simulation
   LinearPath CtrlStateTraj, PlanStateTraj;
   InitialSimulation(Sim, SimParaObj, CtrlStateTraj, PlanStateTraj);
   std::vector<double> qDes = InitConfig;               // This is commanded robot configuration to the controller.
+  std::vector<double> qVis = InitConfig;               // This is commanded robot configuration to the controller.
   double InitTime = Sim.time;
   SimParaObj.FailureTime = 0.0;
 
-  while(Sim.time <= SimParaObj.TotalDuration + SimParaObj.InitDuration){
-    Robot TempSimRobot = *Sim.world->robots[0];
-    double TempTime = Sim.time - InitTime;
-    std::vector<double> TempqDes = SimpleCartesianControllerTest(TempSimRobot, InitConfig, 2, TempTime, SimParaObj.TimeStep);
-    NewControllerPtr->SetConstant(Config(TempqDes));
-    StateLogger(Sim, CtrlStateTraj, PlanStateTraj, TempqDes, SimParaObj);
-    Sim.Advance(SimParaObj.TimeStep);
-    Sim.UpdateModel();
-  }
+  // while(Sim.time <= SimParaObj.TotalDuration + SimParaObj.InitDuration){
+  //   Robot TempSimRobot = *Sim.world->robots[0];
+  //   double TempTime = Sim.time - InitTime;
+  //   // std::vector<double> TempqDes = SimpleCartesianControllerTest(TempSimRobot, InitConfig, 2, TempTime, SimParaObj.TimeStep);
+  //   NewControllerPtr->SetPIDCommand(Config(InitConfig));
+  //   StateLogger(Sim, CtrlStateTraj, PlanStateTraj, qDes, SimParaObj);
+  //   Sim.Advance(SimParaObj.TimeStep);
+  //   Sim.UpdateModel();
+  // }
 
   ControlReferenceInfo  ControlReferenceObj;                            // Used for control reference generation.
   Robot                 SimRobot;
@@ -49,6 +52,7 @@ int SimulationTest(WorldSimulation & Sim, const std::vector<ContactStatusInfo> &
   std::vector<ContactStatusInfo> curContactInfo =  InitContactInfo;
   while(Sim.time <= SimParaObj.TotalDuration + SimParaObj.InitDuration){
     SimRobot = *Sim.world->robots[0];
+    qVis = SimRobot.q;
     double SimTime = Sim.time;
     if(!FailureFlag) PushImposer(Sim,  SimTime - InitTime, SimParaObj, FailureFlag);
 
@@ -87,7 +91,9 @@ int SimulationTest(WorldSimulation & Sim, const std::vector<ContactStatusInfo> &
        } 
        else{
         double InnerTime = SimTime - CtrlStartTime;
-        qDes = ConfigReferenceGene(SimRobot, InnerTime, RMObject, SelfLinkGeoObj, ControlReferenceObj, SimParaObj);
+        std::pair<Config, Config> ConfigPair = ConfigReferenceGene(SimRobot, InnerTime, RMObject, SelfLinkGeoObj, ControlReferenceObj, SimParaObj);
+        qDes = ConfigPair.first;
+        qVis = ConfigPair.second;
         if (ControlReferenceObj.getTouchDownFlag()){
           CtrlFlag = false;
           DetectionCount = 0.0;
@@ -98,8 +104,8 @@ int SimulationTest(WorldSimulation & Sim, const std::vector<ContactStatusInfo> &
     }
     OverallFailureFlag = FailureChecker(SimRobot, RMObject);    
     ContactForceAppender(SimParaObj.CtrlVelTrajStr.c_str(), Sim.time, COMVel);
-    NewControllerPtr->SetConstant(Config(qDes));
-    StateLogger(Sim, CtrlStateTraj, PlanStateTraj, qDes, SimParaObj);
+    NewControllerPtr->SetPIDCommand(Config(qDes));
+    StateLogger(Sim, CtrlStateTraj, PlanStateTraj, qVis, SimParaObj);
     Sim.Advance(SimParaObj.TimeStep);
     Sim.UpdateModel();
   }

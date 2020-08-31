@@ -96,8 +96,8 @@ int main(){
   double PhaseRatio       = 0.6;
   double ReductionRatio   = 0.6;
 
-  // std::vector<std::string> ScenarioVec = { "flat_1Contact", "flat_2Contact", "uneven_1Contact", "uneven_2Contact"};  
-  std::vector<std::string> ScenarioVec = {"flat_2Contact", "uneven_1Contact", "uneven_2Contact"};  
+  std::vector<std::string> ScenarioVec = { "flat_1Contact", "flat_2Contact", "uneven_1Contact", "uneven_2Contact"};  
+  // std::vector<std::string> ScenarioVec = {"flat_2Contact", "uneven_1Contact", "uneven_2Contact"};  
 
   /* 3. Setup Parameters for Algorithm */
   for (auto Scenario: ScenarioVec){

@@ -6,8 +6,8 @@
 /* Based on
     "Closed-Loop Manipulator Control Using Quaternion Feedback" Joseph Yuan 1987
  */
-static double Kp = 35.0;        // Position Gain
-static double Ko = 10.0;        // Orientation Gain
+static double Kp = 0.0;        // Position Gain
+static double Ko = 5.0;        // Orientation Gain
 
 static QuaternionRotation QuaternionRotationReference(double InnerTime, const ControlReferenceInfo & ControlReference){
     if(InnerTime<0.0) return ControlReference.OrientationQuat.front();
@@ -114,6 +114,10 @@ std::vector<double> SimpleCartesianControllerTest(const Robot & SimRobot, const 
     Matrix FullJac;
     SimRobot.GetFullJacobian(EndEffectorLocalPos, RobotLinkIndex, FullJac);
 
+    Matrix *Htheta[3];
+    Matrix *Hp[3];
+    SimRobot.GetJacobianDeriv(EndEffectorLocalPos, RobotLinkIndex, Htheta, Hp);
+
     Eigen::MatrixXd FullJacMat(FullJac.numRows(), FullJac.numCols());
     for (int i = 0; i < FullJac.numRows(); i++){
         for (int j = 0; j < FullJac.numCols(); j++){
@@ -123,7 +127,8 @@ std::vector<double> SimpleCartesianControllerTest(const Robot & SimRobot, const 
     Eigen::MatrixXd FullJacMatInv = FullJacMat.completeOrthogonalDecomposition().pseudoInverse();
     
     // For position
-    Vector3 EndEffectorGlobalPosRef(1.0, 1.0, 1.0);
+    // Vector3 EndEffectorGlobalPosRef(1.0, 1.0, 1.0);
+    Vector3 EndEffectorGlobalPosRef(EndEffectorGlobalPos);
     // 1.052793552448519, 0.67004973564675863, 0.50351747714962491
     Vector3 PosOffset = -Kp * (EndEffectorGlobalPos - EndEffectorGlobalPosRef);
     // For orientation
@@ -158,10 +163,13 @@ std::vector<double> SimpleCartesianControllerTest(const Robot & SimRobot, const 
     }
 
     Eigen::VectorXd qdotDes = FullJacMatInv * RHS;
-    std::vector<double> qDes = InitConfig;
-    for (int i = 18; i < SimRobot.q.size(); i++){
+    std::vector<double> qDes = SimRobot.q;
+    double offsetTol = 1e-6;
+    for (int i = 0; i < SimRobot.q.size(); i++){
         // std::cout<<"Link: "<<i<<" velocity: "<<qdotDes[i]<<endl;
-        qDes[i] = SimRobot.q[i] + qdotDes[i] * TimeStep;
+        double qDesOffset = qdotDes[i] * TimeStep;
+        qDes[i] = SimRobot.q[i] + qDesOffset;
+        if(abs(qDesOffset)<=offsetTol) qDes[i] = InitConfig[i];
         if(qDes[i]<=SimRobot.qMin(i)) qDes[i] = SimRobot.qMin(i);
         if(qDes[i]>=SimRobot.qMax(i)) qDes[i] = SimRobot.qMax(i);
     }

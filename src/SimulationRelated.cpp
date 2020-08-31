@@ -41,9 +41,9 @@ void PushImposer(WorldSimulation & Sim, const double & CurTime, const SimPara & 
   }
 }
 
-std::vector<double> ConfigReferenceGene(const Robot & SimRobotObj,  double & InnerTime,
-                                        ReachabilityMap & RMObject, SelfLinkGeoInfo & SelfLinkGeoObj,
-                                        ControlReferenceInfo & ControlReference, SimPara & SimParaObj){
+std::pair<Config, Config> ConfigReferenceGene(const Robot & SimRobotObj,  double & InnerTime,
+                                              ReachabilityMap & RMObject, SelfLinkGeoInfo & SelfLinkGeoObj,
+                                              ControlReferenceInfo & ControlReference, SimPara & SimParaObj){
   // This function generates robot's reference configuration at each time.
   std::printf("InnerTime: %f\n", InnerTime);
   double TouchDownTol  = 0.01;                      //  1 cm as a Touch Down Terminal Tolerance.
@@ -57,30 +57,34 @@ std::vector<double> ConfigReferenceGene(const Robot & SimRobotObj,  double & Inn
     EndEffectorSDVec.push_back(CurrentDist);
   }
   double SwingContactDist = *min_element(EndEffectorSDVec.begin(), EndEffectorSDVec.end());
-  Config qDesConfig;
-  Config qDesInit; 
 
+  Config qDesConfig, qVisConfig;
   // Pure Open-loop Controller
-  ControlReference.PlannedConfigTraj.Eval(0, qDesInit);   
   ControlReference.PlannedConfigTraj.Eval(InnerTime, qDesConfig); 
-  std::string ConfigPath = "./";
-  std::string OptConfigFile = "InterConfig.config";
-  RobotConfigWriter(qDesConfig, ConfigPath, OptConfigFile);
+  qVisConfig = SimRobotObj.q;
+  std::vector<int> SwingLinkChain = RMObject.EndEffectorLink2Pivotal[SwingLinkInfoIndex];
+  for (int i = 0; i < SwingLinkChain.size(); i++)
+    qVisConfig[SwingLinkChain[i]] = qDesConfig[SwingLinkChain[i]];
 
-  // IK Path Tracking Controller
-  Vector GoalPosVec; 
-  ControlReference.EndEffectorTraj.Eval(InnerTime, GoalPosVec);
-  double sCur = (InnerTime + SimParaObj.TimeStep)/ControlReference.PlannedConfigTraj.EndTime();
-  // // std::cout<<"sCur: "<<sCur<<endl;
+  // // IK Path Tracking Controller
+  // Vector GoalPosVec; 
+  // ControlReference.EndEffectorTraj.Eval(InnerTime, GoalPosVec);
+  // double sCur = (InnerTime + SimParaObj.TimeStep)/ControlReference.PlannedConfigTraj.EndTime();
   // double EndEffectorProjx = EdgeProjMagnitude(sCur, SimParaObj.EndEffectorInitxDir, SimParaObj.DirectionGoal);
   // double EndEffectorProjy = EdgeProjMagnitude(sCur, SimParaObj.EndEffectorInityDir, SimParaObj.DirectionGoal);
   // bool IKFlag = true;
   // Vector3 GoalPos(GoalPosVec);
-  // std::vector<double> qDesConfigIK = IKConfigOptimazation(SimRobotObj, qDesInit, RMObject, SelfLinkGeoObj, GoalPos, SimParaObj.DirectionGoal, SwingLinkInfoIndex, sCur, EndEffectorProjx, EndEffectorProjy, IKFlag);
-  // if(IKFlag) qDesConfig = qDesConfigIK;
+  // std::vector<double> qVisConfigIK = IKConfigOptimazation(SimRobotObj, RMObject, SelfLinkGeoObj, GoalPos, SimParaObj.DirectionGoal, SwingLinkInfoIndex, sCur, EndEffectorProjx, EndEffectorProjy, IKFlag);
+  // if(IKFlag){
+  //   qVisConfig = qVisConfigIK;
+  //   std::vector<int> SwingLinkChain = RMObject.EndEffectorLink2Pivotal[SwingLinkInfoIndex];
+  //   for (int i = 0; i < SwingLinkChain.size(); i++){
+  //     qDesConfig[SwingLinkChain[i]] = qVisConfig[SwingLinkChain[i]];
+  //   }
+  // }
 
-  // Cartesian Controller 
-  qDes = CartesianController(SimRobotObj, ControlReference, InnerTime, SimParaObj.TimeStep);
+  // // Cartesian Controller 
+  // qDes = CartesianController(SimRobotObj, ControlReference, InnerTime, SimParaObj.TimeStep);
 
   double TimeRatio = 0.5;
 
@@ -111,7 +115,7 @@ std::vector<double> ConfigReferenceGene(const Robot & SimRobotObj,  double & Inn
       }
     }
   }
-  return qDes;
+  return std::make_pair(Config(qDesConfig), Config(qVisConfig));
 }
 
 int FailureTest(WorldSimulation & Sim, const std::vector<ContactStatusInfo> & InitContactInfo, ReachabilityMap & RMObject, SelfLinkGeoInfo & SelfLinkGeoObj, SimPara & SimParaObj){

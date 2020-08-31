@@ -364,6 +364,8 @@ ControlReferenceInfo TrajectoryPlanning(Robot & SimRobotInner, const InvertedPen
   SimParaObj.EndEffectorInityDir = EndEffectorInityDir;
   std::vector<int> SwingLinkChain = RMObject.EndEffectorLink2Pivotal[SwingLinkInfoIndex];
 
+  QuaternionRotation InitEndEffectorQuaternion = getEndEffectorQuaternion(SimRobotInner, SwingLinkInfoIndex);
+
   // The main idea is that end effector will gradually move to be aligned with goal direction.
   double sVal = 0.0;
   double sUnit = 0.2;
@@ -376,11 +378,13 @@ ControlReferenceInfo TrajectoryPlanning(Robot & SimRobotInner, const InvertedPen
   std::vector<Config>   WholeBodyConfigTraj;
   std::vector<Config>   WholeBodyVelocityTraj;
   std::vector<Vector3>  PlannedEndEffectorTraj;
+  std::vector<QuaternionRotation> OrientationQuat;
 
   TimeTraj.push_back(CurrentTime);
   WholeBodyConfigTraj.push_back(CurrentConfig);
   WholeBodyVelocityTraj.push_back(CurrentVelocity);
   PlannedEndEffectorTraj.push_back(CurrentContactPos);
+  OrientationQuat.push_back(InitEndEffectorQuaternion);
 
   SimParaObj.setTrajConfigOptFlag(false);
 
@@ -396,6 +400,7 @@ ControlReferenceInfo TrajectoryPlanning(Robot & SimRobotInner, const InvertedPen
     std::vector<double> NextConfig, NextVelocity;
     double StageTime;
     double sNew;
+    QuaternionRotation OrientationQuat_i;
     bool StageOptFlag = StageStateOptimization( sVal, sUnit, sNew, CurrentContactPos, SimRobotInner, CurrentConfig, WholeBodyVelocityTraj.back(),
                                                 NextConfig, NextVelocity, RMObject, SelfLinkGeoObj, EndEffectorPathObj, SwingLinkChain,
                                                 SimParaObj, StageTime);
@@ -414,11 +419,14 @@ ControlReferenceInfo TrajectoryPlanning(Robot & SimRobotInner, const InvertedPen
     CurrentTime+=StageTime;
     CurrentConfig = UpdatedConfig;
     CurrentVelocity = Config(NextVelocity);
+    QuaternionRotation EndEffectorQuaternion = getEndEffectorQuaternion(SimRobotInner, SwingLinkInfoIndex);
+
 
     TimeTraj.push_back(CurrentTime);
     WholeBodyConfigAppender(WholeBodyConfigTraj, CurrentConfig);
     WholeBodyVelocityTraj.push_back(Config(NextVelocity));
     PlannedEndEffectorTraj.push_back(CurrentContactPos);
+    OrientationQuat.push_back(EndEffectorQuaternion);
 
     SelfLinkGeoObj.LinkBBsUpdate(SimRobotInner);
     sIndex++;
@@ -460,6 +468,7 @@ ControlReferenceInfo TrajectoryPlanning(Robot & SimRobotInner, const InvertedPen
     ControlReferenceObj.SetInitContactStatus(SimParaObj.FixedContactStatusInfo);
     ControlReferenceObj.SetGoalContactStatus(GoalContactInfo);
     ControlReferenceObj.TrajectoryUpdate(TimeTraj, WholeBodyConfigTraj, PlannedEndEffectorTraj);
+    ControlReferenceObj.OrientationQuat = OrientationQuat;
     double EstFailureMetric = EstimatedFailureMetric(SimRobotInner, GoalContactInfo, InvertedPendulumObj.COMPos, InvertedPendulumObj.COMVel);
     ControlReferenceObj.setFailueMetric(EstFailureMetric);
     ControlReferenceObj.setReadyFlag(true);

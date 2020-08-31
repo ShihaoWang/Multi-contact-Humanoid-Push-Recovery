@@ -79,6 +79,9 @@ std::vector<double> ConfigReferenceGene(const Robot & SimRobotObj,  double & Inn
   // std::vector<double> qDesConfigIK = IKConfigOptimazation(SimRobotObj, qDesInit, RMObject, SelfLinkGeoObj, GoalPos, SimParaObj.DirectionGoal, SwingLinkInfoIndex, sCur, EndEffectorProjx, EndEffectorProjy, IKFlag);
   // if(IKFlag) qDesConfig = qDesConfigIK;
 
+  // Cartesian Controller 
+  qDes = CartesianController(SimRobotObj, ControlReference, InnerTime, SimParaObj.TimeStep);
+
   double TimeRatio = 0.5;
 
   if(!ControlReference.getTouchDownFlag()){
@@ -142,6 +145,7 @@ int FailureTest(WorldSimulation & Sim, const std::vector<ContactStatusInfo> & In
     ContactForceAppender(SimParaObj.FailureVelTrajStr.c_str(), Sim.time, COMVel);
     Sim.Advance(SimParaObj.TimeStep);
     Sim.UpdateModel();
+    std::printf("Failure Initial Simulation Time: %f\n", SimTime);
   }
   if(FailureChecker(*Sim.world->robots[0], RMObject)) return 1;
   return 0;

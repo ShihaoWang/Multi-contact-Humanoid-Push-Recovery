@@ -742,29 +742,29 @@ struct SimPara{
     CtrlKETrajStr = CurrentCasePath + "CtrlKETraj.txt";
     FailureKETrajStr = CurrentCasePath + "FailureKETraj.txt";
   }
-  string getCurrentCasePath(){ return CurrentCasePath; }
+  string getCurrentCasePath() const{ return CurrentCasePath; }
   void setImpulseForceMax(const Vector3 & ImpulseDirection){ ImpulseForceMax = ForceMax * ImpulseDirection; }
   void setPlanStageIndex(const int & _PlanStageIndex) {PlanStageIndex = _PlanStageIndex; }
-  int  getPlanStageIndex(){ return PlanStageIndex; }
+  int  getPlanStageIndex() const{ return PlanStageIndex; }
   void setPlanEndEffectorIndex( const int & _PlanEndEffectorIndex) { PlanEndEffectorIndex = _PlanEndEffectorIndex; }
-  int  getPlanEndEffectorIndex(){ return PlanEndEffectorIndex; }
+  int  getPlanEndEffectorIndex() const{ return PlanEndEffectorIndex; }
   void setSimTime(const double & _SimTime) { SimTime = _SimTime; }
-  double getSimTime() { return SimTime; }
+  double getSimTime() const{ return SimTime; }
   void setContactInit(const Vector3 _ContactInit){ ContactInit = _ContactInit; }
-  Vector3 getContactInit() { return ContactInit; }
+  Vector3 getContactInit() const{ return ContactInit; }
   void setContactGoal(const Vector3 _ContactGoal){ ContactGoal = _ContactGoal;}
-  Vector3 getContactGoal(){ return ContactGoal;}
+  Vector3 getContactGoal() const{ return ContactGoal;}
   void setDirectionInit(const Vector3 & _DirectionInit ){ DirectionInit = _DirectionInit; }
   void setDirectionGoal(const Vector3 & _DirectionGoal ){ DirectionGoal = _DirectionGoal; }
-  Vector3 getGoalDirection() { return DirectionGoal; }
+  Vector3 getGoalDirection() const{ return DirectionGoal; }
   void setTransPathFeasiFlag(const bool & _TransPathFeasiFlag){ TransPathFeasiFlag = _TransPathFeasiFlag; }
-  bool getTransPathFeasiFlag(){ return TransPathFeasiFlag;}
+  bool getTransPathFeasiFlag() const{ return TransPathFeasiFlag;}
   void setSwingLinkInfoIndex(const int _SwingLinkInfoIndex) {SwingLinkInfoIndex = _SwingLinkInfoIndex; }
-  int  getSwingLinkInfoIndex() { return SwingLinkInfoIndex;}
+  int  getSwingLinkInfoIndex() const{ return SwingLinkInfoIndex;}
   void setCurrentContactPos(const Vector3 & _CurrentContactPos) {CurrentContactPos = _CurrentContactPos; }
-  Vector3 getCurrentContactPos(){ return CurrentContactPos; }
+  Vector3 getCurrentContactPos() const{ return CurrentContactPos; }
   void setTrajConfigOptFlag(const bool & _TrajConfigOptFlag){ TrajConfigOptFlag = _TrajConfigOptFlag;}
-  bool getTrajConfigOptFlag() {return TrajConfigOptFlag;}
+  bool getTrajConfigOptFlag() const{return TrajConfigOptFlag;}
   void setFixedContactStatusInfo(const std::vector<ContactStatusInfo> & _FixedContactStatusInfo){ FixedContactStatusInfo =_FixedContactStatusInfo;}
 
   double  ForceMax;
@@ -811,27 +811,27 @@ struct ControlReferenceInfo{
     FailureMetric = 0.0;
     }
   void setFailueMetric(const double & _FailureMetric){ FailureMetric = _FailureMetric; }
-  double getFailueMetric(){ return FailureMetric; }
+  double getFailueMetric() const{ return FailureMetric; }
   void setSwingLinkInfoIndex(const int & _SwingLinkInfoIndex) {SwingLinkInfoIndex = _SwingLinkInfoIndex;}
-  int  getSwingLinkInfoIndex() { return SwingLinkInfoIndex; }
-  bool getReadyFlag(){ return ReadyFlag;}
+  int  getSwingLinkInfoIndex() const{ return SwingLinkInfoIndex; }
+  bool getReadyFlag() const{ return ReadyFlag;}
   void setReadyFlag(const bool & _ReadyFlag ){ ReadyFlag = _ReadyFlag; }
   void setTouchDownFlag(const bool & _TouchDownFlag){ TouchDownFlag=_TouchDownFlag; }
   bool getTouchDownFlag(){ return TouchDownFlag; }
-  int  getControlReferenceType(){ return ControlReferenceType; }
+  int  getControlReferenceType() const{ return ControlReferenceType; }
   void setControlReferenceType(const int &_ControlReferenceType) { ControlReferenceType = _ControlReferenceType; }
   void setGoalContactPosNGrad(const Vector3 & _GoalContactPos, const Vector3 & _GoalContactGrad){
     GoalContactPos = _GoalContactPos;
     GoalContactGrad = _GoalContactGrad;
   }
-  Vector3 getGoalContactPos(){  return GoalContactPos; }
-  Vector3 getGoalContactGrad(){ return GoalContactGrad;}
+  Vector3 getGoalContactPos() const{ return GoalContactPos; }
+  Vector3 getGoalContactGrad() const{ return GoalContactGrad;}
 
   void SetInitContactStatus(const std::vector<ContactStatusInfo> &_InitContactStatus){ InitContactStatus = _InitContactStatus; }
-  std::vector<ContactStatusInfo> getInitContactStatus(){return InitContactStatus;}
+  std::vector<ContactStatusInfo> getInitContactStatus() const{return InitContactStatus;}
 
   void SetGoalContactStatus(const std::vector<ContactStatusInfo> & _GoalContactStatus) { GoalContactStatus = _GoalContactStatus;}
-  std::vector<ContactStatusInfo> getGoalContactStatus() {return GoalContactStatus;}
+  std::vector<ContactStatusInfo> getGoalContactStatus() const{return GoalContactStatus;}
 
   void TrajectoryUpdate(const std::vector<double> & timeTraj, const std::vector<Config> & configTraj, const std::vector<Vector3> & endeffectorTraj){
     TimeTraj = timeTraj;
@@ -850,9 +850,9 @@ struct ControlReferenceInfo{
   }
 
   void setWaitTime(const double & _WaitTime) { WaitTime = _WaitTime; }
-  double getWaitTime() { return WaitTime; }
+  double getWaitTime() const{ return WaitTime; }
   void setTouchDownConfig(const std::vector<double> _TouchDownConfig){ TouchDownConfig = _TouchDownConfig; }
-  std::vector<double> getTouchDownConfig(){ return TouchDownConfig;}
+  std::vector<double> getTouchDownConfig() const{ return TouchDownConfig;}
 
   bool    ReadyFlag;
   bool    TouchDownFlag;
@@ -869,7 +869,7 @@ struct ControlReferenceInfo{
 
   LinearPath PlannedConfigTraj;
   LinearPath EndEffectorTraj;
-
+  std::vector<QuaternionRotation> OrientationQuat;
   std::vector<double> TimeTraj;
   std::vector<Config> ConfigTraj;
   std::vector<ContactStatusInfo> InitContactStatus;
@@ -882,9 +882,9 @@ struct FailureStateInfo{
     FailureStateFlag = false;
   };
 
-  Config getFailureStateConfig() { return FailureConfig; }
-  Config getFailureStateVelocity(){ return FailureVelocity; }
-  bool   getFailureStateFlag() { return FailureStateFlag; }
+  Config getFailureStateConfig() const{ return FailureConfig; }
+  Config getFailureStateVelocity() const{ return FailureVelocity; }
+  bool   getFailureStateFlag() const{ return FailureStateFlag; }
   void FailureStateUpdate(const double & _FailureTime, const Config & _FailureConfig, const Config & _FailureVelocity){
     FailureTime = _FailureTime;
     FailureConfig = _FailureConfig;
@@ -986,7 +986,7 @@ struct PIPInfo{
   }
   void setIntersection(const Vector3 & intersection_){ intersection = intersection_;}
   void setSpeed(const double & _speed ) {speed = _speed;}
-  double getSpeed(){ return speed;}
+  double getSpeed() const{ return speed;}
 
   double  L, Ldot, theta, thetadot;
   double  g, g_angle;

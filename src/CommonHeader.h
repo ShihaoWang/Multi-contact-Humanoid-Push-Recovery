@@ -13,6 +13,7 @@
 #include <KrisLibrary/geometry/AnyGeometry.h>
 #include <KrisLibrary/meshing/VolumeGrid.h>
 #include <KrisLibrary/meshing/PointCloud.h>
+#include <KrisLibrary/math3d/rotation.h>
 #include "RobotInfo.h"
 #include "Spline.h"
 
@@ -60,6 +61,7 @@ Vector3 ContactForceFinder(WorldSimulation & Sim);
 void ContactForceAppender(const char *CFFile_Name, double Time_t, Vector3 Force);
 void KineticEnergyAppender(const char *KEFile_Name, double Time_t, double KE);
 double EdgeProjMagnitude(double cur_s,  Vector3 InitxDir, Vector3 GoalDir);
+QuaternionRotation getEndEffectorQuaternion(const Robot & SimRobotInner, int SwingLinkInfoIndex);
 
 /* 4. Main Simulation*/
 void InitialSimulation(WorldSimulation & Sim, const SimPara & SimParaObj, LinearPath & CtrlStateTraj, LinearPath & PlanStateTraj);
@@ -100,5 +102,7 @@ bool TaskTrajectoryPlanningInner( const double & _sVal, double & _sNew,
                                   const double & _StageTime,                        const double & _DampingRatio);
 /* 9. IK Controller*/
 std::vector<double> IKConfigOptimazation(const Robot & SimRobot, Config qDesInit, ReachabilityMap & RMObject, SelfLinkGeoInfo & SelfLinkGeoObj_, Vector3 GoalPos_, Vector3 GoalDir_, int SwingLinkInfoIndex_, double sCur, double EndEffectorProjx, double EndEffectorProjy, bool & OptFlag);
+/* 10. Cartesian Controller */
+std::vector<double> CartesianController(const Robot & SimRobot, const ControlReferenceInfo  & ControlReference, double InnerTime, double TimeStep);
 
 #endif

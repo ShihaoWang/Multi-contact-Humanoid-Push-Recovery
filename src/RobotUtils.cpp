@@ -385,3 +385,30 @@ double EstimatedFailureMetric(const Robot & SimRobotInner, const std::vector<Con
   double FailureMetric = FailureMetricEval(PIPTotal);
   return FailureMetric;
 }
+
+QuaternionRotation getEndEffectorQuaternion(const Robot & SimRobotInner, int SwingLinkInfoIndex){
+  // This function is used to get the Quaternion from end effector
+  RobotLink3D EndEffectorLink = SimRobotInner.links[NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].LinkIndex];
+
+  Vector3 Local_x, Local_y, Local_z;
+  Local_x.x = EndEffectorLink.T_World.R.data[0][0];
+  Local_x.y = EndEffectorLink.T_World.R.data[0][1];
+  Local_x.z = EndEffectorLink.T_World.R.data[0][2];
+
+  Local_y.x = EndEffectorLink.T_World.R.data[1][0];
+  Local_y.y = EndEffectorLink.T_World.R.data[1][1];
+  Local_y.z = EndEffectorLink.T_World.R.data[1][2];
+
+  Local_z.x = EndEffectorLink.T_World.R.data[2][0];
+  Local_z.y = EndEffectorLink.T_World.R.data[2][1];
+  Local_z.z = EndEffectorLink.T_World.R.data[2][2];
+
+  Matrix3 RotMat(Local_x, Local_y, Local_z);
+
+  // std::cout<<RotMat<<endl;
+
+  QuaternionRotation EndEffectorQuaternion;
+  EndEffectorQuaternion.setMatrix(RotMat);
+
+  return EndEffectorQuaternion;
+}

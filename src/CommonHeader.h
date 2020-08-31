@@ -104,5 +104,5 @@ bool TaskTrajectoryPlanningInner( const double & _sVal, double & _sNew,
 std::vector<double> IKConfigOptimazation(const Robot & SimRobot, Config qDesInit, ReachabilityMap & RMObject, SelfLinkGeoInfo & SelfLinkGeoObj_, Vector3 GoalPos_, Vector3 GoalDir_, int SwingLinkInfoIndex_, double sCur, double EndEffectorProjx, double EndEffectorProjy, bool & OptFlag);
 /* 10. Cartesian Controller */
 std::vector<double> CartesianController(const Robot & SimRobot, const ControlReferenceInfo  & ControlReference, double InnerTime, double TimeStep);
-
+std::vector<double> SimpleCartesianControllerTest(const Robot & SimRobot, const std::vector<double> & InitConfig, const int & SwingLinkInfoIndex, double InnerTime, double TimeStep);
 #endif

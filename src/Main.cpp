@@ -89,14 +89,15 @@ int main(){
 
   // Three inner variables
   double TimeStep         = 0.025;
-  double InitDuration     = 2.0;
+  double InitDuration     = 1.0;
   double TotalDuration    = 5.0;                     // Simulation lasts for 5s after initial duration
 
   double ForwardDuration  = 0.75;
   double PhaseRatio       = 0.6;
   double ReductionRatio   = 0.6;
 
-  std::vector<std::string> ScenarioVec = { "flat_1Contact", "flat_2Contact", "uneven_1Contact", "uneven_2Contact"};  
+  // std::vector<std::string> ScenarioVec = { "flat_1Contact", "flat_2Contact", "uneven_1Contact", "uneven_2Contact"};  
+  std::vector<std::string> ScenarioVec = {"flat_2Contact", "uneven_1Contact", "uneven_2Contact"};  
 
   /* 3. Setup Parameters for Algorithm */
   for (auto Scenario: ScenarioVec){

@@ -32,6 +32,16 @@ int SimulationTest(WorldSimulation & Sim, const std::vector<ContactStatusInfo> &
   double InitTime = Sim.time;
   SimParaObj.FailureTime = 0.0;
 
+  while(Sim.time <= SimParaObj.TotalDuration + SimParaObj.InitDuration){
+    Robot TempSimRobot = *Sim.world->robots[0];
+    double TempTime = Sim.time - InitTime;
+    std::vector<double> TempqDes = SimpleCartesianControllerTest(TempSimRobot, InitConfig, 2, TempTime, SimParaObj.TimeStep);
+    NewControllerPtr->SetConstant(Config(TempqDes));
+    StateLogger(Sim, CtrlStateTraj, PlanStateTraj, TempqDes, SimParaObj);
+    Sim.Advance(SimParaObj.TimeStep);
+    Sim.UpdateModel();
+  }
+
   ControlReferenceInfo  ControlReferenceObj;                            // Used for control reference generation.
   Robot                 SimRobot;
   bool                  FailureFlag = false;

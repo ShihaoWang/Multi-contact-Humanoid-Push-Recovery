@@ -7,8 +7,10 @@ static std::vector<int> SwingLinkChain;
 static Vector3 GoalPos;
 static Vector3 GoalDir;
 static std::vector<double> ReferenceConfig;
+static std::vector<double> InitConfig;
 static SelfLinkGeoInfo SelfLinkGeoObj;
 static double EndEffectorTol = 1e-3;
+static double ConfigCoeff = 0.0;
 
 struct TrajConfigOpt: public NonlinearOptimizerInfo
 {
@@ -49,9 +51,13 @@ struct TrajConfigOpt: public NonlinearOptimizerInfo
   static std::vector<double> TrajConfigOptNCons(const int & nVar, const int & nObjNCons, const std::vector<double> & SwingLinkConfig)
   {
     // This funciton provides the constraint for the configuration variable
+    double ConfigDiff = 0.0;
     std::vector<double> F(nObjNCons);
-    for (int i = 0; i < SwingLinkChain.size(); i++)
-        ReferenceConfig[SwingLinkChain[i]] = SwingLinkConfig[i];
+    for (int i = 0; i < SwingLinkChain.size(); i++){
+      ReferenceConfig[SwingLinkChain[i]] = SwingLinkConfig[i];
+      double ConfigDiff_i = ReferenceConfig[SwingLinkChain[i]] - InitConfig[SwingLinkChain[i]];
+      ConfigDiff+= ConfigCoeff * ConfigDiff_i * ConfigDiff_i;
+    }
     SimRobotObj.UpdateConfig(Config(ReferenceConfig));
     SimRobotObj.UpdateGeometry();
     Vector3 EndEffectorAvgPos;
@@ -59,7 +65,7 @@ struct TrajConfigOpt: public NonlinearOptimizerInfo
                                   NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].LinkIndex,
                                   EndEffectorAvgPos);
     Vector3 AvgDiff = EndEffectorAvgPos - GoalPos;
-    F[0] = AvgDiff.normSquared();
+    F[0] = AvgDiff.normSquared() + ConfigDiff;
     int ConstraintIndex = 1;
     for (int i = 0; i < NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].LocalContacts.size(); i++)
     {
@@ -108,6 +114,7 @@ std::vector<double> TrajConfigOptimazation(const Robot & SimRobot, ReachabilityM
   GoalPos = SimParaObj.getCurrentContactPos();
   GoalDir = SimParaObj.getGoalDirection();
   ReferenceConfig = SimRobot.q;
+  InitConfig = SimRobot.q;
   SelfLinkGeoObj = _SelfLinkGeoObj;
 
   TrajConfigOpt TrajConfigOptProblem;
@@ -145,13 +152,26 @@ std::vector<double> TrajConfigOptimazation(const Robot & SimRobot, ReachabilityM
     Flow_vec[i] = 0;
     Fupp_vec[i] = 1e10;
   }
+  double edgeTol = 1e-2;
+  if(sVal * sVal<= (1.0 - edgeTol)){
+    Flow_vec[neF-2] = EndEffectorProjx - EndEffectorTol;
+    Fupp_vec[neF-2] = EndEffectorProjx + EndEffectorTol;
 
-  Flow_vec[neF-2] = EndEffectorProjx - EndEffectorTol;
-  Fupp_vec[neF-2] = EndEffectorProjx + EndEffectorTol;
+    Flow_vec[neF-1] = EndEffectorProjy - EndEffectorTol;
+    Fupp_vec[neF-1] = EndEffectorProjy + EndEffectorTol;
 
-  Flow_vec[neF-1] = EndEffectorProjy - EndEffectorTol;
-  Fupp_vec[neF-1] = EndEffectorProjy + EndEffectorTol;
+    ConfigCoeff = 0.0;
+  } else{
+    Flow_vec[neF-2] = -1e10;
+    Flow_vec[neF-1] = -1e10;
 
+    for (int i = 0; i < NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].LocalContacts.size(); i++){
+      Flow_vec[i+1] = 0;
+      Fupp_vec[i+1] = EndEffectorTol;
+    }
+    
+    ConfigCoeff = 1.0;
+  }
   TrajConfigOptProblem.ConstraintBoundsUpdate(Flow_vec, Fupp_vec);
 
   /*

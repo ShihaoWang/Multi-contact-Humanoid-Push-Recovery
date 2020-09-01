@@ -566,8 +566,6 @@ def EndEffectorTrajPlot(vis, SimulationTime, PlanningObj, SpecificPath, PlotDura
                     WeightedContactDataUnPlot(vis, StepNo, j, CandidateContacts_data)
                     TransitionDataUnplot(vis, StepNo, j)
 
-
-
 def ExperimentVisualizer(world, ContactLinkDictionary, ExpTraj, PIPInfoList, ImpulseObj, PlanningObj, SpecificPath, Para):
 
     ExpViewer = MyGLPlugin(world)

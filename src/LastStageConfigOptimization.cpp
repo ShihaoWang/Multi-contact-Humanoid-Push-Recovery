@@ -51,20 +51,14 @@ struct LastStageConfigOpt: public NonlinearOptimizerInfo
   {
     // This funciton provides the constraint for the configuration variable
     std::vector<double> F(nObjNCons);
-    // double ConfigDiff = 0.0;
+    double ConfigDiff = 0.0;
     for (int i = 0; i < SwingLinkChain.size(); i++){
-      // double ConfigDiff_i = OriginalConfig[SwingLinkChain[i]] - SwingLinkConfig[i];
-      // ConfigDiff+=ConfigDiff_i * ConfigDiff_i;
+      double ConfigDiff_i = OriginalConfig[SwingLinkChain[i]] - SwingLinkConfig[i];
+      ConfigDiff+=ConfigDiff_i * ConfigDiff_i;
       ReferenceConfig[SwingLinkChain[i]] = SwingLinkConfig[i];
     }
     SimRobotObj.UpdateConfig(Config(ReferenceConfig));
-    // F[0] = ConfigDiff;
-    Vector3 EndEffectorAvgPos;
-    SimRobotObj.GetWorldPosition( NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].AvgLocalContact,
-                                  NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].LinkIndex,
-                                  EndEffectorAvgPos);
-    Vector3 EndEffectorPosDiff = EndEffectorAvgPos - GoalPos;
-    F[0] = EndEffectorPosDiff.normSquared();
+    F[0] = ConfigDiff;
 
     int ConstraintIndex = 1;
     // Self-collision constraint
@@ -138,7 +132,7 @@ std::vector<double> LastStageConfigOptimazation(const Robot & SimRobot, Reachabi
     Fupp_vec[i] = 1e10;
   }
   for (int i = neF - SwingLinkContactSize; i < neF; i++) {
-    Flow_vec[i] = -LastStageTol;
+    Flow_vec[i] = 0.0;
     Fupp_vec[i] = LastStageTol;
   }
   LastStageConfigOptProblem.ConstraintBoundsUpdate(Flow_vec, Fupp_vec);
@@ -155,7 +149,7 @@ std::vector<double> LastStageConfigOptimazation(const Robot & SimRobot, Reachabi
 
   // Here we would like allow much more time to be spent on IK
   LastStageConfigOptProblem.NonlinearProb.setIntParameter("Iterations limit", 250);
-  LastStageConfigOptProblem.NonlinearProb.setIntParameter("Major iterations limit", 35);
+  LastStageConfigOptProblem.NonlinearProb.setIntParameter("Major iterations limit", 50);
   LastStageConfigOptProblem.NonlinearProb.setIntParameter("Major print level", 0);
   LastStageConfigOptProblem.NonlinearProb.setIntParameter("Minor print level", 0);
   /*

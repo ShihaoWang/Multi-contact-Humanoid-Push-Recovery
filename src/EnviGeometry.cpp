@@ -181,7 +181,7 @@ static std::vector<RMPoint> RMLayerGene(const double & r, const int & n){
 
 // Here this function is used to generate a sufficiently dense reachability map for end effector(s)
 ReachabilityMap ReachabilityMapGenerator(Robot & SimRobot, const std::vector<LinkInfo> & RobotLinkInfo, const std::vector<int> & TorsoLink){
-  double MaxRadius = 0.9;
+  double MaxRadius = 0.95;
   int LayerNumber = 61;
   int PointNumberOnInner = 1;
   double LayerDiff = MaxRadius/(LayerNumber * 1.0);
@@ -256,12 +256,19 @@ ReachabilityMap ReachabilityMapGenerator(Robot & SimRobot, const std::vector<Lin
     double Pivotal2EndRadius = sqrt(Pivotal2End.x * Pivotal2End.x + Pivotal2End.y * Pivotal2End.y + Pivotal2End.z * Pivotal2End.z);
     EndEffectorRadius[i] = Pivotal2EndRadius;
   }
+
+  std::vector<int> Link34ToPivotal{34, 33, 32, 31, 30, 29};
+  std::vector<int> Link27ToPivotal{27, 26, 25, 24 ,23 ,22};
+
   RMObject.EndEffectorRadius = EndEffectorRadius;
   RMObject.EndEffectorLinkIndex = EndEffectorLinkIndex;
   RMObject.EndEffectorCollisionRadius = EndEffectorCollisionRadius;
   RMObject.EndEffectorPivotalIndex = EndEffectorPivotalIndex;
   RMObject.EndEffectorLink2Pivotal = EndEffectorLink2Pivotal;
   RMObject.EndEffectorIndices = EndEffectorIndices;
+
+  RMObject.Link34ToPivotal = Link34ToPivotal;
+  RMObject.Link27ToPivotal = Link27ToPivotal;
 
   RMObject.TotalPoint = TotalPoint;
   return RMObject;

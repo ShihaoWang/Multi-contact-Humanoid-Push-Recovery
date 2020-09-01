@@ -79,7 +79,7 @@ static std::vector<Vector3> BasePointsGene(const Vector3 & PosInit, const Vector
 }
 
 static double SelfCollisionDist(SelfLinkGeoInfo & SelfLinkGeoObj, const int & SwingLinkInfoIndex, const std::vector<Vector3> & PointVec){
-  double Distol = 0.05;      // 5cm
+  double Distol = 0.025;      // 2.5cm
   std::vector<double> DistVec;
   for (const Vector3 & Point: PointVec) {
     double  PointDist; Vector3 PointGrad;
@@ -253,11 +253,11 @@ static CubicSplineInfo SplineObjGene(SelfLinkGeoInfo & SelfLinkGeoObj, const int
   int PointNo = std::max(PointAtLeast, int(Init2GoalDist/PointPerDist));
 
   std::vector<Vector3> Points = BasePointsGene(PosInit, NormalInit, PosGoal, NormalGoal, PointNo);
-  Vector3Writer(Points, "InitialPathWayPoints");
+  // Vector3Writer(Points, "InitialPathWayPoints");
   double SelfTol = SelfCollisionDist(SelfLinkGeoObj, SwingLinkInfoIndex, Points);
   bool InitShiftFeasFlag;     // For the shift of initial pts.
   Points = SpatialPointShifter(Points, SwingLinkInfoIndex, SelfTol, SelfLinkGeoObj, InitShiftFeasFlag);
-  Vector3Writer(Points, "ShiftedPathWayPoints");
+  // Vector3Writer(Points, "ShiftedPathWayPoints");
   bool FeasiFlag = false;
   SimParaObj.setTransPathFeasiFlag(FeasiFlag);
   CubicSplineInfo CubicSplineInfoObjEmpty;
@@ -326,7 +326,7 @@ CubicSplineInfo TransientPathGene(const Robot & SimRobot, SelfLinkGeoInfo & Self
       TransitionIndex++;
     }
     SimParaObj.DataRecorderObj.setPathWaypoints(PathWayPoints);
-    Vector3Writer(PathWayPoints, "TransitionPoints");
+    // Vector3Writer(PathWayPoints, "TransitionPoints");
   }
   return CubicSplineInfoObj;
 }

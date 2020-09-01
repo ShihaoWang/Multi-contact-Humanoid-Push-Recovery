@@ -391,6 +391,8 @@ struct ReachabilityMap {
   std::vector<double> EndEffectorRadius;
   std::vector<int> EndEffectorLinkIndex;              //
   std::vector<int> EndEffectorPivotalIndex;
+  std::vector<int> Link34ToPivotal;
+  std::vector<int> Link27ToPivotal;  
   std::map<int, std::vector<int>> EndEffectorLink2Pivotal;       // This map saves intermediate joint from End Effector Joint to Pivotal Joint.
   std::map<int, int> EndEffectorIndices;
   double MaxRadius;

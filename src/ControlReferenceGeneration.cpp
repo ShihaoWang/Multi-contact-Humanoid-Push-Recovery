@@ -196,8 +196,8 @@ static std::vector<Vector3> OptimalContactFinder(const std::vector<Vector3> & Su
       OptimalContactQueue.pop();
     }
   }
-  Vector3Writer(CandidateContacts, "OptimalContact");
-  Vector3Writer(CandidateContactWeights, "OptimalContactWeights");
+  // Vector3Writer(CandidateContacts, "OptimalContact");
+  // Vector3Writer(CandidateContactWeights, "OptimalContactWeights");
   SimParaObj.DataRecorderObj.setCCSData(CandidateContacts, CandidateContactWeights, SelectedContacts);
   return SelectedContacts;
 }
@@ -225,15 +225,15 @@ static std::vector<Vector3> OptimalContactSearcher( Robot SimRobot,     const PI
       InvertedPendulumInfo InvertedPendulumObj(PIPObj.L, PIPObj.g, PIPObj.theta, PIPObj.thetadot, COMPos, COMVel);
       InvertedPendulumObj.setEdges(PIPObj.edge_a, PIPObj.edge_b);
 
-      std::string ConfigPath = "./";
-      std::string OptConfigFile = "BeforeRot.config";
-      RobotConfigWriter(SimRobot.q, ConfigPath, "BeforeRot.config");
+      // std::string ConfigPath = "./";
+      // std::string OptConfigFile = "BeforeRot.config";
+      // RobotConfigWriter(SimRobot.q, ConfigPath, "BeforeRot.config");
       bool MotionFlag = true;
       Config UpdatedConfig  = WholeBodyDynamicsIntegrator(SimRobot, InvertedPendulumObj, SimParaObj.ForwardDuration, MotionFlag);
       SimRobot.UpdateConfig(UpdatedConfig);
-      RobotConfigWriter(SimRobot.q, ConfigPath, "AfterRot.config");
+      // RobotConfigWriter(SimRobot.q, ConfigPath, "AfterRot.config");
       if(!MotionFlag){
-        std::printf("Whole-Body Motion Invalid for Contact Search!\n");
+        // std::printf("Whole-Body Motion Invalid for Contact Search!\n");
         return OptimalContact;
       } 
 
@@ -252,9 +252,9 @@ static std::vector<Vector3> OptimalContactSearcher( Robot SimRobot,     const PI
 
       SimParaObj.DataRecorderObj.setRCSData(ReachableContacts, CollisionFreeContacts, SupportiveContacts);
 
-      Vector3Writer(ReachableContacts, "ReachableContacts");
-      Vector3Writer(CollisionFreeContacts, "CollisionFreeContacts");
-      Vector3Writer(SupportiveContacts, "SupportiveContacts");
+      // Vector3Writer(ReachableContacts, "ReachableContacts");
+      // Vector3Writer(CollisionFreeContacts, "CollisionFreeContacts");
+      // Vector3Writer(SupportiveContacts, "SupportiveContacts");
 
       // 3. Optimal Contact
       int CutOffNo = 5;

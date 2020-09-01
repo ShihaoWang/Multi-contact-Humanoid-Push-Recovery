@@ -153,7 +153,7 @@ def Robot_Config_Plot(world, DOF, config_init):
     #
     # ReducedOptimalContact_data = ContactDataLoader("ReducedOptimalContact")
 
-    ContactChoice = ReachableContacts_data
+    ContactChoice = InitialTransitionPoints_data
     # ContactChoice = SupportiveContacts_data
     SimRobot = world.robot(0)
     SimRobot.setConfig(config_init)
@@ -163,8 +163,8 @@ def Robot_Config_Plot(world, DOF, config_init):
         SimRobot.setConfig(config_init)
         WeightedContactDataPlot(vis, OptimalContact_data, OptimalContactWeights_data)
         ContactDataPlot(vis, ContactChoice)
-        ipdb.set_trace()
         vis.unlock()
+        ipdb.set_trace()
         time.sleep(0.1)
         WeightedContactDataUnPlot(vis, OptimalContact_data)
         ContactDataUnplot(vis, ContactChoice)

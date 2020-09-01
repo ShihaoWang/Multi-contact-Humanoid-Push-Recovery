@@ -400,6 +400,8 @@ ControlReferenceInfo TrajectoryPlanning(Robot & SimRobotInner, const InvertedPen
     std::vector<double> NextConfig, NextVelocity;
     double StageTime;
     double sNew;
+    if(sVal>0.6) 
+      int a = 1;
     QuaternionRotation OrientationQuat_i;
     bool StageOptFlag = StageStateOptimization( sVal, sUnit, sNew, CurrentContactPos, SimRobotInner, CurrentConfig, WholeBodyVelocityTraj.back(),
                                                 NextConfig, NextVelocity, RMObject, SelfLinkGeoObj, EndEffectorPathObj, SwingLinkChain,

@@ -113,9 +113,9 @@ static std::vector<double> GlobalFrameConfigUpdate(Robot & SimRobot, const doubl
 }
 
 Config WholeBodyDynamicsIntegrator(Robot & SimRobot, InvertedPendulumInfo & InvertedPendulumObj, const double & TimeDuration, bool & MotionFlag){
-  // Physically speaking, Pendulum's theta should be bounded within (-pi/3, pi/3)
+  // Physically speaking, Pendulum's theta should be bounded within (-pi/2, pi/2)
   double Theta = InvertedPendulumObj.Theta;
-  double ThetaTol = M_PI/3.0 ;    // 60 degree
+  double ThetaTol = M_PI/2.0 ;    // 90 degree
   MotionFlag = true;
   if(Theta * Theta>= ThetaTol * ThetaTol){
     std::printf("Given Robot's State Is Not Feasible for Recovery Since Its Tilted Angle is %f", Theta);

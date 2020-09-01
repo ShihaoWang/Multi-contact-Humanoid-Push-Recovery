@@ -41,6 +41,19 @@ void PushImposer(WorldSimulation & Sim, const double & CurTime, const SimPara & 
   }
 }
 
+static double PlanSwingContactDistCal(Robot SimRobotObj, int SwingLinkInfoIndex, Config PlanConfig){
+  SimRobotObj.UpdateConfig(PlanConfig);
+  std::vector<double> EndEffectorSDVec;
+  for (Vector3 & LocalContact : NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].LocalContacts) {
+    Vector3 SwingLinkContactPos;
+    SimRobotObj.GetWorldPosition(LocalContact, NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].LinkIndex, SwingLinkContactPos);
+    double CurrentDist = NonlinearOptimizerInfo::SDFInfo.SignedDistance(SwingLinkContactPos);
+    EndEffectorSDVec.push_back(CurrentDist);
+  }
+  double SwingContactDist = *min_element(EndEffectorSDVec.begin(), EndEffectorSDVec.end());
+  return SwingContactDist;
+}
+
 std::pair<Config, Config> ConfigReferenceGene(const Robot & SimRobotObj,  double & InnerTime,
                                               ReachabilityMap & RMObject, SelfLinkGeoInfo & SelfLinkGeoObj,
                                               ControlReferenceInfo & ControlReference, SimPara & SimParaObj){
@@ -56,7 +69,7 @@ std::pair<Config, Config> ConfigReferenceGene(const Robot & SimRobotObj,  double
     double CurrentDist = NonlinearOptimizerInfo::SDFInfo.SignedDistance(SwingLinkContactPos);
     EndEffectorSDVec.push_back(CurrentDist);
   }
-  double SwingContactDist = *min_element(EndEffectorSDVec.begin(), EndEffectorSDVec.end());
+  double CtrlSwingContactDist = *min_element(EndEffectorSDVec.begin(), EndEffectorSDVec.end());
 
   Config qDesConfig, qVisConfig;
   // Pure Open-loop Controller
@@ -65,6 +78,10 @@ std::pair<Config, Config> ConfigReferenceGene(const Robot & SimRobotObj,  double
   std::vector<int> SwingLinkChain = RMObject.EndEffectorLink2Pivotal[SwingLinkInfoIndex];
   for (int i = 0; i < SwingLinkChain.size(); i++)
     qVisConfig[SwingLinkChain[i]] = qDesConfig[SwingLinkChain[i]];
+
+  double PlanSwingContactDist = PlanSwingContactDistCal(SimRobotObj, SwingLinkInfoIndex, qVisConfig);
+
+  double SwingContactDist = min(CtrlSwingContactDist, PlanSwingContactDist);
 
   // // IK Path Tracking Controller
   // Vector GoalPosVec; 

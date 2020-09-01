@@ -833,10 +833,11 @@ struct ControlReferenceInfo{
   void SetGoalContactStatus(const std::vector<ContactStatusInfo> & _GoalContactStatus) { GoalContactStatus = _GoalContactStatus;}
   std::vector<ContactStatusInfo> getGoalContactStatus() const{return GoalContactStatus;}
 
-  void TrajectoryUpdate(const std::vector<double> & timeTraj, const std::vector<Config> & configTraj, const std::vector<Vector3> & endeffectorTraj){
+  void TrajectoryUpdate(const std::vector<double> & timeTraj, const std::vector<Config> & configTraj, const std::vector<Config> & velocityTraj, const std::vector<Vector3> & endeffectorTraj){
     TimeTraj = timeTraj;
     ConfigTraj = configTraj;
     PlannedConfigTraj = LinearPath(timeTraj, configTraj);
+    PlannedVelocityTraj = LinearPath(timeTraj, velocityTraj);
     std::vector<Vector> endeffectorPath;
     for (Vector3 EndEffectorPos: endeffectorTraj){
       Vector EndEffectorPosVec;
@@ -868,6 +869,7 @@ struct ControlReferenceInfo{
   std::vector<double> TouchDownConfig;
 
   LinearPath PlannedConfigTraj;
+  LinearPath PlannedVelocityTraj;
   LinearPath EndEffectorTraj;
   std::vector<QuaternionRotation> OrientationQuat;
   std::vector<double> TimeTraj;

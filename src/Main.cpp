@@ -92,9 +92,9 @@ int main(){
   double InitDuration     = 1.0;
   double TotalDuration    = 5.0;                     // Simulation lasts for 5s after initial duration
 
-  double ForwardDuration  = 0.75;
+  double ForwardDuration  = 0.5;
   double PhaseRatio       = 0.6;
-  double ReductionRatio   = 0.6;
+  double ReductionRatio   = 0.5;
 
   std::vector<std::string> ScenarioVec = { "flat_1Contact", "flat_2Contact", "uneven_1Contact", "uneven_2Contact"};  
   // std::vector<std::string> ScenarioVec = {"flat_2Contact", "uneven_1Contact", "uneven_2Contact"};  
@@ -138,7 +138,7 @@ int main(){
     int FileIndex = FileIndexFinder(false, -1);
     while (FileIndex<=ExpTotal){
       int ImpulseDirSize = 8;
-      double ImpulseAngleUnit = M_PI/(1.0 * ImpulseDirSize);
+      double ImpulseAngleUnit = 2.0 * M_PI/(1.0 * ImpulseDirSize);
       for (int i = 0; i < ImpulseDirSize; i++){
         double ImpulseAngle = 1.0 * i * ImpulseAngleUnit;
         double Impulse_x = cos(ImpulseAngle);

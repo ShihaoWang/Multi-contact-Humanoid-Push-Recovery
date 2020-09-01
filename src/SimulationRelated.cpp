@@ -68,7 +68,7 @@ std::pair<Config, Config> ConfigReferenceGene(const Robot & SimRobotObj,  double
 
   // // IK Path Tracking Controller
   // Vector GoalPosVec; 
-  // ControlReference.EndEffectorTraj.Eval(InnerTime, GoalPosVec);
+  // ControlReference.EndEffectorTraj.Eval(InnerTime + SimParaObj.TimeStep, GoalPosVec);
   // double sCur = (InnerTime + SimParaObj.TimeStep)/ControlReference.PlannedConfigTraj.EndTime();
   // double EndEffectorProjx = EdgeProjMagnitude(sCur, SimParaObj.EndEffectorInitxDir, SimParaObj.DirectionGoal);
   // double EndEffectorProjy = EdgeProjMagnitude(sCur, SimParaObj.EndEffectorInityDir, SimParaObj.DirectionGoal);

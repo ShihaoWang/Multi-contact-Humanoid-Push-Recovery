@@ -80,7 +80,7 @@ PIPInfo TipOverPIPGenerator(const std::vector<Vector3> & ActiveContacts, const V
 ControlReferenceInfo ControlReferenceGene(Robot & SimRobot, const std::vector<ContactStatusInfo> & RobotContactInfo, ReachabilityMap & RMObject, SelfLinkGeoInfo & SelfLinkGeoObj, SimPara & SimParaObj);
 
 /* 7. Whole-Body Estimation */
-Config WholeBodyDynamicsIntegrator(Robot & SimRobot, InvertedPendulumInfo & InvertedPendulumObj, const double & TimeDuration);
+Config WholeBodyDynamicsIntegrator(Robot & SimRobot, InvertedPendulumInfo & InvertedPendulumObj, const double & TimeDuration, bool & MotionFlag);
 std::vector<double> CurrentBaseDeltaCal(const Robot & _SimRobot, const InvertedPendulumInfo & _InvertedPendulumObj, const double & TimeDuration);
 
 /* 8. Transient Path Generation*/

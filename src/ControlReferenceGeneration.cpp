@@ -121,7 +121,7 @@ static std::vector<std::pair<Vector3, double>> ContactFreeInfoFn(const Robot & S
     return ContactFreeInfo;
   }
 
-static std::vector<Vector3> SupportContactFinder(const Vector3 & COMPos, const PIPInfo & PIPObj, const std::vector<Vector3> & ContactFreeContact){
+static std::vector<Vector3> SupportContactFinder(const PIPInfo & PIPObj, const std::vector<Vector3> & ContactFreeContact){
   Vector3 EdgeA = PIPObj.edge_a;
   Vector3 EdgeB = PIPObj.edge_b;
   Vector3 EdgeDir = EdgeB - EdgeA;
@@ -130,7 +130,7 @@ static std::vector<Vector3> SupportContactFinder(const Vector3 & COMPos, const P
   for (int i = 0; i < ContactFreeContact.size(); i++){
     Vector3 ContactFreePoint = ContactFreeContact[i];
     Vector3 PointNormDir = NonlinearOptimizerInfo::SDFInfo.SignedDistanceNormal(ContactFreePoint);
-    Vector3 rPos2COMPos = ContactFreePoint - COMPos;
+    Vector3 rPos2COMPos = ContactFreePoint - EdgeA;
     Vector3 InducedMomentum = cross(rPos2COMPos, PointNormDir);
     double ProjMomentumVal = InducedMomentum.x * EdgeDir.x + InducedMomentum.y * EdgeDir.y + InducedMomentum.z * EdgeDir.z;
     if(ProjMomentumVal<=0) SupportContact.push_back(ContactFreePoint);
@@ -196,8 +196,8 @@ static std::vector<Vector3> OptimalContactFinder(const std::vector<Vector3> & Su
       OptimalContactQueue.pop();
     }
   }
-  // Vector3Writer(CandidateContacts, "OptimalContact");
-  // Vector3Writer(CandidateContactWeights, "OptimalContactWeights");
+  Vector3Writer(CandidateContacts, "OptimalContact");
+  Vector3Writer(CandidateContactWeights, "OptimalContactWeights");
   SimParaObj.DataRecorderObj.setCCSData(CandidateContacts, CandidateContactWeights, SelectedContacts);
   return SelectedContacts;
 }
@@ -225,8 +225,17 @@ static std::vector<Vector3> OptimalContactSearcher( Robot SimRobot,     const PI
       InvertedPendulumInfo InvertedPendulumObj(PIPObj.L, PIPObj.g, PIPObj.theta, PIPObj.thetadot, COMPos, COMVel);
       InvertedPendulumObj.setEdges(PIPObj.edge_a, PIPObj.edge_b);
 
-      Config UpdatedConfig  = WholeBodyDynamicsIntegrator(SimRobot, InvertedPendulumObj, SimParaObj.ForwardDuration);
+      std::string ConfigPath = "./";
+      std::string OptConfigFile = "BeforeRot.config";
+      RobotConfigWriter(SimRobot.q, ConfigPath, "BeforeRot.config");
+      bool MotionFlag = true;
+      Config UpdatedConfig  = WholeBodyDynamicsIntegrator(SimRobot, InvertedPendulumObj, SimParaObj.ForwardDuration, MotionFlag);
       SimRobot.UpdateConfig(UpdatedConfig);
+      RobotConfigWriter(SimRobot.q, ConfigPath, "AfterRot.config");
+      if(!MotionFlag){
+        std::printf("Whole-Body Motion Invalid for Contact Search!\n");
+        return OptimalContact;
+      } 
 
       COMPos = InvertedPendulumObj.COMPos;
       COMVel = InvertedPendulumObj.COMVel;
@@ -238,14 +247,14 @@ static std::vector<Vector3> OptimalContactSearcher( Robot SimRobot,     const PI
       std::vector<Vector3> CollisionFreeContacts = RMObject.ContactFreePointsFinder(RMObject.EndEffectorCollisionRadius[ContactFormObj.SwingLinkInfoIndex], ReachableContacts, ContactFreeInfoVec);
       if(!CollisionFreeContacts.size()) return OptimalContact;
       // 2. Supportive
-      std::vector<Vector3> SupportiveContacts = SupportContactFinder(COMPos, PIPObj, CollisionFreeContacts);
+      std::vector<Vector3> SupportiveContacts = SupportContactFinder(PIPObj, CollisionFreeContacts);
       if(!SupportiveContacts.size()) return OptimalContact;
 
       SimParaObj.DataRecorderObj.setRCSData(ReachableContacts, CollisionFreeContacts, SupportiveContacts);
 
-      // Vector3Writer(ReachableContacts, "ReachableContacts");
-      // Vector3Writer(CollisionFreeContacts, "CollisionFreeContacts");
-      // Vector3Writer(SupportiveContacts, "SupportiveContacts");
+      Vector3Writer(ReachableContacts, "ReachableContacts");
+      Vector3Writer(CollisionFreeContacts, "CollisionFreeContacts");
+      Vector3Writer(SupportiveContacts, "SupportiveContacts");
 
       // 3. Optimal Contact
       int CutOffNo = 5;

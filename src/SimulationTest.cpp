@@ -14,9 +14,6 @@ int SimulationTest(WorldSimulation & Sim, const std::vector<ContactStatusInfo> &
   double  DetectionWait   = SimParaObj.DetectionWait;
   double  DetectionCount  = DetectionWait;
   int     PlanStageIndex  = 0;
-  double  RHPDuration     = 0.25;                 // Duration for RHP executation until next planning
-  double  RHPCounter      = RHPDuration;
-  bool    RHPFlag         = false;                // True means RHP planning is working.
   bool    TouchDownFlag   = false;
   bool    CtrlFlag        = false;
   double  CtrlStartTime   = 0.0;

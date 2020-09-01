@@ -407,9 +407,15 @@ ControlReferenceInfo TrajectoryPlanning(Robot & SimRobotInner, const InvertedPen
     sVal = sNew;
     if(!StageOptFlag) break;
     SimRobotInner.UpdateConfig(Config(NextConfig));
-    Config UpdatedConfig  = WholeBodyDynamicsIntegrator(SimRobotInner, InvertedPendulumObj, StageTime);
-    SimRobotInner.UpdateConfig(UpdatedConfig);
+    bool MotionFlag; 
+    Config UpdatedConfig  = WholeBodyDynamicsIntegrator(SimRobotInner, InvertedPendulumObj, StageTime, MotionFlag);
 
+    std::string ConfigPath = "./";
+    std::string OptConfigFile = "StageConfig" + to_string(sIndex) + ".config";
+    RobotConfigWriter(UpdatedConfig, ConfigPath, OptConfigFile);
+
+    if(!MotionFlag) break;
+    SimRobotInner.UpdateConfig(UpdatedConfig);
     if(sVal>=0.5){
       PenetrationFlag = PenetrationTester(SimRobotInner, SwingLinkInfoIndex);
       if(PenetrationFlag)
@@ -467,7 +473,7 @@ ControlReferenceInfo TrajectoryPlanning(Robot & SimRobotInner, const InvertedPen
       GoalContactInfo[SwingLinkInfoIndex].LocalContactStatus[i] = 1;
     ControlReferenceObj.SetInitContactStatus(SimParaObj.FixedContactStatusInfo);
     ControlReferenceObj.SetGoalContactStatus(GoalContactInfo);
-    ControlReferenceObj.TrajectoryUpdate(TimeTraj, WholeBodyConfigTraj, PlannedEndEffectorTraj);
+    ControlReferenceObj.TrajectoryUpdate(TimeTraj, WholeBodyConfigTraj, WholeBodyVelocityTraj, PlannedEndEffectorTraj);
     ControlReferenceObj.OrientationQuat = OrientationQuat;
     double EstFailureMetric = EstimatedFailureMetric(SimRobotInner, GoalContactInfo, InvertedPendulumObj.COMPos, InvertedPendulumObj.COMVel);
     ControlReferenceObj.setFailueMetric(EstFailureMetric);

@@ -112,7 +112,16 @@ static std::vector<double> GlobalFrameConfigUpdate(Robot & SimRobot, const doubl
   return FrameConfigVec;
 }
 
-Config WholeBodyDynamicsIntegrator(Robot & SimRobot, InvertedPendulumInfo & InvertedPendulumObj, const double & TimeDuration){
+Config WholeBodyDynamicsIntegrator(Robot & SimRobot, InvertedPendulumInfo & InvertedPendulumObj, const double & TimeDuration, bool & MotionFlag){
+  // Physically speaking, Pendulum's theta should be bounded within (-pi/3, pi/3)
+  double Theta = InvertedPendulumObj.Theta;
+  double ThetaTol = M_PI/3.0 ;    // 60 degree
+  MotionFlag = true;
+  if(Theta * Theta>= ThetaTol * ThetaTol){
+    std::printf("Given Robot's State Is Not Feasible for Recovery Since Its Tilted Angle is %f", Theta);
+    MotionFlag = false;
+    return SimRobot.q;
+  }
   Vector3 RotAxis = InvertedPendulumObj.edge_b - InvertedPendulumObj.edge_a;
   RotAxis.setNormalized(RotAxis);
   const int IntergrationStep = 11;
@@ -121,6 +130,11 @@ Config WholeBodyDynamicsIntegrator(Robot & SimRobot, InvertedPendulumInfo & Inve
   double ThetaInit = InvertedPendulumObj.Theta;
   for (int IntergrationIndex = 0; IntergrationIndex < IntergrationStep; IntergrationIndex++){
     StepIntegrator(InvertedPendulumObj, RotAxis, TimeStep);
+    Theta = InvertedPendulumObj.Theta;
+    if(Theta * Theta>=ThetaTol * ThetaTol){
+      std::printf("Whole-Body Estimation Turns Out To Be Non-stabilizable Since Its Tilted Angle is %f", Theta);     
+      MotionFlag = false;
+    }
   }
 
   double ThetaOffset = InvertedPendulumObj.Theta - ThetaInit;

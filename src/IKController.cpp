@@ -5,10 +5,8 @@ static Robot SimRobotObj;
 static int SwingLinkInfoIndex;
 static std::vector<int> SwingLinkChain;
 static Vector3 GoalPos;
-static Vector3 GoalDir;
 static std::vector<double> ReferenceConfig;
 static SelfLinkGeoInfo SelfLinkGeoObj;
-static double EndEffectorTol = 1e-3;
 
 struct IKConfigOpt: public NonlinearOptimizerInfo
 {
@@ -81,32 +79,16 @@ struct IKConfigOpt: public NonlinearOptimizerInfo
       F[ConstraintIndex] = SelfCollisionDistVec[i];
       ConstraintIndex+=1;
     }
-    RobotLink3D EndEffectorLink = SimRobotObj.links[NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].LinkIndex];
-
-    Vector3 EndEffectorInitxDir, EndEffectorInityDir;   // Eventually these two directions should be orthgonal to goal direction.
-    EndEffectorInitxDir.x = EndEffectorLink.T_World.R.data[0][0];
-    EndEffectorInitxDir.y = EndEffectorLink.T_World.R.data[0][1];
-    EndEffectorInitxDir.z = EndEffectorLink.T_World.R.data[0][2];
-    F[ConstraintIndex] = EndEffectorInitxDir.dot(GoalDir);
-    ConstraintIndex+=1;
-
-    EndEffectorInityDir.x = EndEffectorLink.T_World.R.data[1][0];
-    EndEffectorInityDir.y = EndEffectorLink.T_World.R.data[1][1];
-    EndEffectorInityDir.z = EndEffectorLink.T_World.R.data[1][2];
-    F[ConstraintIndex] = EndEffectorInityDir.dot(GoalDir);
-    ConstraintIndex+=1;
-
     return F;
   }
 };
 
-std::vector<double> IKConfigOptimazation(const Robot & SimRobot, ReachabilityMap & RMObject, SelfLinkGeoInfo & SelfLinkGeoObj_, Vector3 GoalPos_, Vector3 GoalDir_, int SwingLinkInfoIndex_, double sCur, double EndEffectorProjx, double EndEffectorProjy, bool & OptFlag){
+std::vector<double> IKConfigOptimazation(const Robot & SimRobot, ReachabilityMap & RMObject, SelfLinkGeoInfo & SelfLinkGeoObj_, Vector3 GoalPos_, int SwingLinkInfoIndex_, bool & OptFlag){
   // This function is used to calculate robot's current reference configuration given its end effector trajectory.
   SimRobotObj = SimRobot;
   SwingLinkInfoIndex = SwingLinkInfoIndex_;
   SwingLinkChain = RMObject.EndEffectorLink2Pivotal[SwingLinkInfoIndex];
   GoalPos = GoalPos_;
-  GoalDir = GoalDir_;
   ReferenceConfig = SimRobot.q;
 
   SelfLinkGeoObj = SelfLinkGeoObj_;
@@ -120,7 +102,6 @@ std::vector<double> IKConfigOptimazation(const Robot & SimRobot, ReachabilityMap
   int neF = 1;
   neF += NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].LocalContacts.size();
   neF += SwingLinkChain.size()-3;                                               // Self-Collision Avoidance
-  neF += 2;                                                                     // End Effector Orientation Constraint
   IKConfigOptProblem.InnerVariableInitialize(n, neF);
 
   /*
@@ -140,17 +121,10 @@ std::vector<double> IKConfigOptimazation(const Robot & SimRobot, ReachabilityMap
     Initialize the bounds of variables
   */
   std::vector<double> Flow_vec(neF), Fupp_vec(neF);
-  for (int i = 0; i < neF; i++)
-  {
+  for (int i = 0; i < neF; i++){
     Flow_vec[i] = 0;
     Fupp_vec[i] = 1e10;
   }
-
-  Flow_vec[neF-2] = EndEffectorProjx - EndEffectorTol;
-  Fupp_vec[neF-2] = EndEffectorProjx + EndEffectorTol;
-
-  Flow_vec[neF-1] = EndEffectorProjy - EndEffectorTol;
-  Fupp_vec[neF-1] = EndEffectorProjy + EndEffectorTol;
 
   IKConfigOptProblem.ConstraintBoundsUpdate(Flow_vec, Fupp_vec);
 
@@ -199,19 +173,6 @@ std::vector<double> IKConfigOptimazation(const Robot & SimRobot, ReachabilityMap
   if(SelfCollisionDistTol<-0.0025){
       std::printf("IKConfigOptimazation Failure due to Self-collision for Link %d! \n", NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].LinkIndex);
       OptFlag = false;
-  }
-
-  Vector3 EndEffectorAvgPos;
-  SimRobotObj.GetWorldPosition(NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].AvgLocalContact, NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].LinkIndex, EndEffectorAvgPos);
-  Vector3 AvgDiff = EndEffectorAvgPos - GoalPos;
-  double DistTestTol = 0.0625;
-  double DistTest = AvgDiff.normSquared();
-  double sTol = 1e-3;
-  if(sCur * sCur>=(1.0 - sTol)){
-    if(DistTest>DistTestTol){
-      std::printf("IKConfigOptimazation Failure due to Goal Contact Non-reachability for Link %d! \n", NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].LinkIndex);
-      OptFlag = false;
-    }
   }
 
   std::string ConfigPath = "./";

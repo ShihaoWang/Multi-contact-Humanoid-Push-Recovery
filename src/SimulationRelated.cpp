@@ -76,29 +76,48 @@ std::pair<Config, Config> ConfigReferenceGene(const Robot & SimRobotObj,  double
   ControlReference.PlannedConfigTraj.Eval(InnerTime, qDesConfig); 
   qVisConfig = SimRobotObj.q;
   std::vector<int> SwingLinkChain = RMObject.EndEffectorLink2Pivotal[SwingLinkInfoIndex];
-  for (int i = 0; i < SwingLinkChain.size(); i++)
-    qVisConfig[SwingLinkChain[i]] = qDesConfig[SwingLinkChain[i]];
 
-  double PlanSwingContactDist = PlanSwingContactDistCal(SimRobotObj, SwingLinkInfoIndex, qVisConfig);
+  Vector GoalPosVec; 
+  ControlReference.EndEffectorTraj.Eval(InnerTime, GoalPosVec);
+  double sCur = (InnerTime + SimParaObj.TimeStep)/ControlReference.PlannedConfigTraj.EndTime();
+  double EndEffectorProjx = EdgeProjMagnitude(sCur, SimParaObj.EndEffectorInitxDir, SimParaObj.DirectionGoal);
+  double EndEffectorProjy = EdgeProjMagnitude(sCur, SimParaObj.EndEffectorInityDir, SimParaObj.DirectionGoal);
+  int EndEffectorIndexA = RMObject.EndEffectorLink2Pivotal[SwingLinkInfoIndex][0];
+  int EndEffectorIndexB = RMObject.EndEffectorLink2Pivotal[SwingLinkInfoIndex][1];
+  std::vector<double> qDesConfigOri = EndEffectorOriOptimazation( SimRobotObj, SwingLinkInfoIndex, 
+                                                                  EndEffectorIndexA, EndEffectorIndexB, 
+                                                                  EndEffectorProjx, EndEffectorProjy, 
+                                                                  SimParaObj.DirectionGoal);
+  // std::string ConfigPath = "./";
+  // std::string OptConfigFile = "qDesConfig.config";
+  // RobotConfigWriter(qDesConfig, ConfigPath, OptConfigFile);
 
-  double SwingContactDist = min(CtrlSwingContactDist, PlanSwingContactDist);
+  qDesConfig[EndEffectorIndexA] = qDesConfigOri[EndEffectorIndexA];
+  qDesConfig[EndEffectorIndexB] = qDesConfigOri[EndEffectorIndexB];
 
-  // // IK Path Tracking Controller
-  // Vector GoalPosVec; 
-  // ControlReference.EndEffectorTraj.Eval(InnerTime + SimParaObj.TimeStep, GoalPosVec);
-  // double sCur = (InnerTime + SimParaObj.TimeStep)/ControlReference.PlannedConfigTraj.EndTime();
-  // double EndEffectorProjx = EdgeProjMagnitude(sCur, SimParaObj.EndEffectorInitxDir, SimParaObj.DirectionGoal);
-  // double EndEffectorProjy = EdgeProjMagnitude(sCur, SimParaObj.EndEffectorInityDir, SimParaObj.DirectionGoal);
+  // OptConfigFile = "qDesConfigOri.config";
+  // RobotConfigWriter(qDesConfig, ConfigPath, OptConfigFile);
+
   // bool IKFlag = true;
   // Vector3 GoalPos(GoalPosVec);
-  // std::vector<double> qVisConfigIK = IKConfigOptimazation(SimRobotObj, RMObject, SelfLinkGeoObj, GoalPos, SimParaObj.DirectionGoal, SwingLinkInfoIndex, sCur, EndEffectorProjx, EndEffectorProjy, IKFlag);
+  // std::vector<double> qVisConfigIK = IKConfigOptimazation(SimRobotObj, RMObject, SelfLinkGeoObj, GoalPos, SwingLinkInfoIndex, IKFlag);
   // if(IKFlag){
   //   qVisConfig = qVisConfigIK;
   //   std::vector<int> SwingLinkChain = RMObject.EndEffectorLink2Pivotal[SwingLinkInfoIndex];
   //   for (int i = 0; i < SwingLinkChain.size(); i++){
   //     qDesConfig[SwingLinkChain[i]] = qVisConfig[SwingLinkChain[i]];
   //   }
+  //   qDesConfig[EndEffectorIndexA] = qDesConfigOri[EndEffectorIndexA];
+  //   qDesConfig[EndEffectorIndexB] = qDesConfigOri[EndEffectorIndexB];
   // }
+  // Config PlanqConfig(qVisConfigIK);
+
+  for (int i = 0; i < SwingLinkChain.size(); i++)
+    qVisConfig[SwingLinkChain[i]] = qDesConfig[SwingLinkChain[i]];
+  Config PlanqConfig = qVisConfig;
+
+  double PlanSwingContactDist = PlanSwingContactDistCal(SimRobotObj, SwingLinkInfoIndex, PlanqConfig);
+  double SwingContactDist = min(CtrlSwingContactDist, PlanSwingContactDist);
 
   // // Cartesian Controller 
   // qDes = CartesianController(SimRobotObj, ControlReference, InnerTime, SimParaObj.TimeStep);
@@ -145,7 +164,6 @@ int FailureTest(WorldSimulation & Sim, const std::vector<ContactStatusInfo> & In
   const char *FailureStateTrajStr_Name  = SimParaObj.FailureStateTrajStr.c_str();
   while(Sim.time <= SimParaObj.InitDuration){
     std::printf("Failure Initial Simulation Time: %f\n", Sim.time);
-    StateTrajAppender(FailureStateTrajStr_Name, Sim.time, Sim.world->robots[0]->q);
     Vector3 COMPos, COMVel;
     getCentroidalState(*Sim.world->robots[0], COMPos, COMVel);
     StateTrajAppender(SimParaObj.FailureStateTrajStr.c_str(),    Sim.time, Sim.world->robots[0]->q);

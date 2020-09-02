@@ -78,7 +78,8 @@ add_executable(MyApp
 	       src/TransientPathGeneration.cpp 
                src/TrajectoryConfigOptimization.cpp
 	       src/CartesianController.cpp
-	       src/IKController.cpp)
+	       src/IKController.cpp
+	       src/EndEffectorOrientation.cpp)
 
 
 target_link_libraries(MyApp  ${KLAMPT_LIBRARIES} ${SNOPT_LIBRARIES} ${GUROBI_LIBRARIES} ${CILANTRO_LIBRARIES} ${GLEW_LIBRARY})

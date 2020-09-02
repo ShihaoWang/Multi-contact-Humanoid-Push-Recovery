@@ -170,7 +170,7 @@ std::vector<double> TrajConfigOptimazation(const Robot & SimRobot, ReachabilityM
       Fupp_vec[i+1] = EndEffectorTol;
     }
     
-    ConfigCoeff = 1.0;
+    ConfigCoeff = 0.1;
   }
   TrajConfigOptProblem.ConstraintBoundsUpdate(Flow_vec, Fupp_vec);
 

@@ -624,7 +624,6 @@ def ExperimentVisualizer(world, ContactLinkDictionary, ExpTraj, PIPInfoList, Imp
 
     PlanningTimeList = PlanningObj[0]
     PlanningResList = PlanningObj[1]
-
     SimulationTime = 0.0
     while vis.shown():
         # This is the main plot program

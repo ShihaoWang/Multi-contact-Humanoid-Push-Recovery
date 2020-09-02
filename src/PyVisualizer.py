@@ -129,12 +129,12 @@ def Robot_Config_Plot(world, DOF, config_init):
    # Here we would like to read point cloud for visualization of planning.
     # 1. All Reachable Points
     # IdealReachableContacts_data = ContactDataLoader("IdealReachableContact")
-    # 2. Active Reachable Points
-    ReachableContacts_data = ContactDataLoader("ReachableContacts")
-    # 3. Contact Free Points
-    CollisionFreeContacts_data = ContactDataLoader("CollisionFreeContacts")
-    # 4. Supportive Points
-    SupportiveContacts_data = ContactDataLoader("SupportiveContacts")
+    # # 2. Active Reachable Points
+    # ReachableContacts_data = ContactDataLoader("ReachableContacts")
+    # # 3. Contact Free Points
+    # CollisionFreeContacts_data = ContactDataLoader("CollisionFreeContacts")
+    # # 4. Supportive Points
+    # SupportiveContacts_data = ContactDataLoader("SupportiveContacts")
 
     OptimalContact_data = ContactDataLoader("OptimalContact")
 
@@ -228,7 +228,7 @@ def main(*arg):
     # In this case, what we have is a config
     CtrlStateTraj = Trajectory(world.robot(0))
     CaseNo = 1
-    TestNo = 1
+    TestNo = 2
     SpecificPath = EnviName + "/" + str(CaseNo) + "/" + str(1)
     CtrlStateTraj.load(SpecificPath + "/CtrlStateTraj.path")
     # import ipdb; ipdb.set_trace()

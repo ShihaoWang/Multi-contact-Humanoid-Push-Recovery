@@ -412,9 +412,9 @@ ControlReferenceInfo TrajectoryPlanning(Robot & SimRobotInner, const InvertedPen
     bool MotionFlag; 
     Config UpdatedConfig  = WholeBodyDynamicsIntegrator(SimRobotInner, InvertedPendulumObj, StageTime, MotionFlag);
 
-    std::string ConfigPath = "./";
-    std::string OptConfigFile = "StageConfig" + to_string(sIndex) + ".config";
-    RobotConfigWriter(UpdatedConfig, ConfigPath, OptConfigFile);
+    // std::string ConfigPath = "./";
+    // std::string OptConfigFile = "StageConfig" + to_string(sIndex) + ".config";
+    // RobotConfigWriter(UpdatedConfig, ConfigPath, OptConfigFile);
 
     if(!MotionFlag) break;
     SimRobotInner.UpdateConfig(UpdatedConfig);

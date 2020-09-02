@@ -140,7 +140,6 @@ int main(){
       int ImpulseDirSize = 8;
       double ImpulseAngleUnit = 2.0 * M_PI/(1.0 * ImpulseDirSize);
       for (int i = 0; i < ImpulseDirSize; i++){
-        i = 1;
         double ImpulseAngle = 1.0 * i * ImpulseAngleUnit;
         double Impulse_x = cos(ImpulseAngle);
         double Impulse_y = sin(ImpulseAngle);

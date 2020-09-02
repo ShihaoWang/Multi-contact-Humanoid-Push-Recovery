@@ -330,7 +330,7 @@ ControlReferenceInfo ControlReferenceGene(Robot & SimRobot,
    SimParaObj.DataRecorderObj.setPlanStageIndexNLinkNo(SimParaObj.getPlanStageIndex(), PlanEndEffectorIndex);
    ControlReferenceInfo ControlReferenceObj =  ControlReferenceGeneInner(SimRobot, TipOverPIP, RMObject, SelfLinkGeoObj, ContactFormObj, SimParaObj);
    double planning_time = (std::clock() - start_time)/(double)CLOCKS_PER_SEC;
-   std::printf("Planning takes: %f ms\n", 1000.0 * planning_time);
+  //  std::printf("Planning takes: %f ms\n", 1000.0 * planning_time);
    stage_planning_time+=planning_time;
    start_time = std::clock();
    ControlReferenceObj.setSwingLinkInfoIndex(ContactFormObj.SwingLinkInfoIndex);
@@ -346,13 +346,6 @@ ControlReferenceInfo ControlReferenceGene(Robot & SimRobot,
      PlanEndEffectorIndex++;
    }
  }
- // // Select Executation Time
- // if(ExecutionTimeVec.size()){
- //   int ObjIndex = std::distance(ExecutionTimeVec.begin(), std::min_element(ExecutionTimeVec.begin(), ExecutionTimeVec.end()));
- //   ControlReferenceInfoObj = ControlReferenceObjVec[ObjIndex];
- //   PlanTimeRecorder(stage_planning_time, SimParaObj.getCurrentCasePath());
- //   PlanningInfoFileAppender(SimParaObj.getPlanStageIndex(), ExecutionTimeVec.size()-1, SimParaObj.getCurrentCasePath(), SimParaObj.getSimTime());
- // }
  // Select Estimated Failure Metric
  if(EstFailureMetricVec.size()){
    int ObjIndex;
@@ -365,6 +358,20 @@ ControlReferenceInfo ControlReferenceGene(Robot & SimRobot,
    else
    {
      ObjIndex = std::distance(EstFailureMetricVec.begin(), std::max_element(EstFailureMetricVec.begin(), EstFailureMetricVec.end()));
+     if((RobotContactInfo[0].LocalContactStatus[0])&&(RobotContactInfo[1].LocalContactStatus[0])){
+       std::vector<double> HandFailureMetric; 
+       std::vector<int> HandControlReference; 
+       for (int i = 0; i < ControlReferenceObjVec.size(); i++){
+         if(ControlReferenceObjVec[i].getSwingLinkInfoIndex()>=2){
+           HandFailureMetric.push_back(ControlReferenceObjVec[i].getFailueMetric());
+           HandControlReference.push_back(i);
+         }
+       }
+       if(HandFailureMetric.size()){
+          int HandControlReferenceIndex = std::distance(HandFailureMetric.begin(), std::max_element(HandFailureMetric.begin(), HandFailureMetric.end()));
+          ObjIndex = HandControlReference[HandControlReferenceIndex];
+       } 
+     } 
      ControlReferenceInfoObj = ControlReferenceObjVec[ObjIndex];
      if(ControlReferenceInfoObj.getSwingLinkInfoIndex() == LastEndEffectorIndex){
        EstFailureMetricVec[ObjIndex] = -1.0;

@@ -152,8 +152,8 @@ std::vector<double> TrajConfigOptimazation(const Robot & SimRobot, ReachabilityM
     Flow_vec[i] = 0;
     Fupp_vec[i] = 1e10;
   }
-  double edgeTol = 1e-2;
-  if(sVal * sVal<= (1.0 - edgeTol)){
+  double EdgeCaseTol = 1e-2;
+  if(sVal * sVal<= (1.0 - EdgeCaseTol)){
     Flow_vec[neF-2] = EndEffectorProjx - EndEffectorTol;
     Fupp_vec[neF-2] = EndEffectorProjx + EndEffectorTol;
 
@@ -170,7 +170,7 @@ std::vector<double> TrajConfigOptimazation(const Robot & SimRobot, ReachabilityM
       Fupp_vec[i+1] = EndEffectorTol;
     }
     
-    ConfigCoeff = 0.1;
+    ConfigCoeff = 0.05;
   }
   TrajConfigOptProblem.ConstraintBoundsUpdate(Flow_vec, Fupp_vec);
 
@@ -215,7 +215,7 @@ std::vector<double> TrajConfigOptimazation(const Robot & SimRobot, ReachabilityM
   }
   double SelfCollisionDistTol = *std::min_element(SelfCollisionDistVec.begin(), SelfCollisionDistVec.end());
 
-  // std::string ConfigPath = "/home/motion/Desktop/Whole-Body-Planning-for-Push-Recovery/build/";
+  // std::string ConfigPath = "./";
   // std::string OptConfigFile = "TrajOptConfig.config";
   // RobotConfigWriter(OptConfig, ConfigPath, OptConfigFile);
 
@@ -237,6 +237,16 @@ std::vector<double> TrajConfigOptimazation(const Robot & SimRobot, ReachabilityM
       OptFlag = false;
       }
   }
+
+  // double EnviTol = 0.05; // 5cm
+  // if(sVal * sVal>=(1.0 - EdgeCaseTol)){
+  //   double EndEffectorDist = NonlinearOptimizerInfo::SDFInfo.SignedDistance(EndEffectorAvgPos);
+  //   if(EndEffectorDist>EnviTol){
+  //     std::printf("TrajConfigOptimazation Failure due to Goal Contact Too High for Link %d! \n", NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].LinkIndex);
+  //     OptFlag = false;  
+  //   }
+  // }
+
   SimParaObj.setTrajConfigOptFlag(OptFlag);
   return OptConfig;
 }

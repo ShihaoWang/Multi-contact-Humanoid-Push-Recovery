@@ -100,7 +100,8 @@ std::pair<Config, Config> ConfigReferenceGene(const Robot & SimRobotObj,  double
 
   // bool IKFlag = true;
   // Vector3 GoalPos(GoalPosVec);
-  // std::vector<double> qVisConfigIK = IKConfigOptimazation(SimRobotObj, RMObject, SelfLinkGeoObj, GoalPos, SwingLinkInfoIndex, IKFlag);
+  // // std::vector<double> qVisConfigIK = IKConfigOptimazation(SimRobotObj, RMObject, SelfLinkGeoObj, GoalPos, SwingLinkInfoIndex, IKFlag);
+  // std::vector<double> qVisConfigIK = IKOrientationConfigOptimazation(SimRobotObj, RMObject, SelfLinkGeoObj, GoalPos, SimParaObj.DirectionGoal, SwingLinkInfoIndex, sCur, EndEffectorProjx, EndEffectorProjy, IKFlag);
   // if(IKFlag){
   //   qVisConfig = qVisConfigIK;
   //   std::vector<int> SwingLinkChain = RMObject.EndEffectorLink2Pivotal[SwingLinkInfoIndex];

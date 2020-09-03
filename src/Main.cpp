@@ -72,7 +72,7 @@ static void mainInner(string ExperimentFolderPath, int FileIndex, int ExpIndex, 
   return;
 }
 
-int main(){
+int main(int argc, char** argv){
    /* 1. Load the Contact Link file */
   const std::string UserFilePath = "../user/";
   const std::string ContactLinkPath = UserFilePath + "ContactLink.txt";
@@ -96,8 +96,19 @@ int main(){
   double PhaseRatio       = 0.6;
   double ReductionRatio   = 0.5;
 
-  std::vector<std::string> ScenarioVec = { "flat_1Contact", "flat_2Contact", "uneven_1Contact", "uneven_2Contact"};  
-  // std::vector<std::string> ScenarioVec = {"flat_2Contact", "uneven_1Contact", "uneven_2Contact"};  
+  std::vector<std::string> ScenarioVec;
+  bool SpecifiedFlag = false;
+  int FileIndex = 0;
+  if(argc>1){
+    string ScenarioName(argv[1]);
+    ScenarioVec.push_back(ScenarioName);
+    FileIndex = atoi(argv[2]);
+    SpecifiedFlag = true;
+  }else{
+    std::vector<std::string> ScenarioVecOption = { "flat_1Contact", "flat_2Contact", "uneven_1Contact", "uneven_2Contact"};  
+    // std::vector<std::string> ScenarioVecOption = {"flat_2Contact", "uneven_1Contact", "uneven_2Contact"};  
+    ScenarioVec = ScenarioVecOption;
+  }
 
   /* 3. Setup Parameters for Algorithm */
   for (auto Scenario: ScenarioVec){
@@ -135,7 +146,7 @@ int main(){
     NonlinearOptimizerInfo::TerrColGeom = TerrColGeom;
 
     const int ExpTotal = 100;
-    int FileIndex = FileIndexFinder(false, -1);
+    if(!SpecifiedFlag) FileIndex = FileIndexFinder(false, -1);
     while (FileIndex<=ExpTotal){
       int ImpulseDirSize = 8;
       double ImpulseAngleUnit = 2.0 * M_PI/(1.0 * ImpulseDirSize);
@@ -158,10 +169,11 @@ int main(){
         SelfLinkGeoInfo SelfLinkGeoObj(*worldObj.robots[0], RMObject.EndEffectorLink2Pivotal, SelfCollisionFreeLink);
         mainInner(ExperimentFolderPath, FileIndex, i+1, RMObject, SelfLinkGeoObj, SimParaObj);
       }
-    FileIndex = FileIndexFinder(true, -1);
-    FileIndex++; 
+      if(!SpecifiedFlag)
+        FileIndex = FileIndexFinder(true, -1);
+      FileIndex++; 
     }
-    FileIndexFinder(true, 1);
+    if(!SpecifiedFlag) FileIndexFinder(true, 1);
   }
   return 1;
 }

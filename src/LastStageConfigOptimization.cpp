@@ -62,18 +62,6 @@ struct LastStageConfigOpt: public NonlinearOptimizerInfo
 
     int ConstraintIndex = 1;
     // Self-collision constraint
-    std::vector<double> SelfCollisionDistVec(SwingLinkChain.size()-3);
-    for (int i = 0; i < SwingLinkChain.size() - 3; i++){
-      Box3D Box3DObj = SimRobotObj.geometry[SwingLinkChain[i]]->GetBB();
-      std::vector<Vector3> BoxVerticesVec = BoxVertices(Box3DObj);
-      std::vector<double> DistVec(BoxVerticesVec.size());
-      for (int j = 0; j < BoxVerticesVec.size(); j++)
-        DistVec[j] = SelfLinkGeoObj.SelfCollisionDist(SwingLinkInfoIndex, BoxVerticesVec[j]);
-      SelfCollisionDistVec[i] = *std::min_element(DistVec.begin(), DistVec.end());
-    }
-    F[ConstraintIndex] = *std::min_element(SelfCollisionDistVec.begin(), SelfCollisionDistVec.end());
-    ConstraintIndex+=1;
-
     for (int i = 0; i < NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].LocalContacts.size(); i++)
     {
       Vector3 LinkiPjPos;
@@ -85,7 +73,7 @@ struct LastStageConfigOpt: public NonlinearOptimizerInfo
   }
 };
 
-std::vector<double> LastStageConfigOptimazation(const Robot & SimRobot, ReachabilityMap & RMObject, SelfLinkGeoInfo & _SelfLinkGeoObj, SimPara & SimParaObj, const int & StageIndex){
+std::vector<double> LastStageConfigOptimazation(const Robot & SimRobot, ReachabilityMap & RMObject, SelfLinkGeoInfo & _SelfLinkGeoObj, SimPara & SimParaObj, bool & LastStageFlag){
   // This function is used to optimize robot's configuration such that a certain contact can be reached for that end effector.
   SimRobotObj = SimRobot;
   SwingLinkInfoIndex = SimParaObj.getSwingLinkInfoIndex();
@@ -105,7 +93,6 @@ std::vector<double> LastStageConfigOptimazation(const Robot & SimRobot, Reachabi
 
   // Cost function on the norm difference between the reference avg position and the modified contact position.
   int neF = 1;
-  neF += 1;
   neF += SwingLinkContactSize;
   LastStageConfigOptProblem.InnerVariableInitialize(n, neF);
 
@@ -162,11 +149,26 @@ std::vector<double> LastStageConfigOptimazation(const Robot & SimRobot, Reachabi
   std::vector<double> OptConfig = ReferenceConfig;
 
   for (int i = 0; i < n; i++)
-  {
     OptConfig[SwingLinkChain[i]] = SwingLinkChainGuess[i];
-  }
+  
   SimRobotObj.UpdateConfig(Config(OptConfig));
   SimRobotObj.UpdateGeometry();
+
+  // std::string ConfigPath = "./";
+  // std::string OptConfigFile = "TrajOptConfig.config";
+  // RobotConfigWriter(OptConfig, ConfigPath, OptConfigFile);
+  LastStageFlag = true;
+  Vector3 EndEffectorAvgPos;
+  SimRobotObj.GetWorldPosition( NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].AvgLocalContact, 
+                                NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].LinkIndex, 
+                                EndEffectorAvgPos);
+  double EndEffectorDist = NonlinearOptimizerInfo::SDFInfo.SignedDistance(EndEffectorAvgPos);
+  double DistTestTol = 0.01;
+  if(DistTestTol * DistTestTol>EndEffectorDist * EndEffectorDist){
+      std::printf("TrajConfigOptimazation Failure due to Goal Contact Non-reachability for Link %d! \n", 
+                    NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].LinkIndex);
+      LastStageFlag = false;
+  }
 
   return OptConfig;
 }

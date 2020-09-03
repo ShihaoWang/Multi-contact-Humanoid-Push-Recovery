@@ -420,8 +420,11 @@ ControlReferenceInfo TrajectoryPlanning(Robot & SimRobotInner, const InvertedPen
     SimRobotInner.UpdateConfig(UpdatedConfig);
     if(sVal>=0.5){
       PenetrationFlag = PenetrationTester(SimRobotInner, SwingLinkInfoIndex);
-      if(PenetrationFlag)
-        UpdatedConfig = LastStageConfigOptimazation(SimRobotInner, RMObject, SelfLinkGeoObj, SimParaObj, -1);
+      if((PenetrationFlag)||(sVal>=1.0)){
+        bool LastStageFlag;
+        UpdatedConfig = LastStageConfigOptimazation(SimRobotInner, RMObject, SelfLinkGeoObj, SimParaObj, LastStageFlag);
+        if(!LastStageFlag) return ControlReferenceObj;
+      }
     }
 
     CurrentTime+=StageTime;

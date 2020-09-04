@@ -84,33 +84,33 @@ std::pair<Config, Config> ConfigReferenceGene(const Robot & SimRobotObj,  double
   double EndEffectorProjy = EdgeProjMagnitude(sCur, SimParaObj.EndEffectorInityDir, SimParaObj.DirectionGoal);
   int EndEffectorIndexA = RMObject.EndEffectorLink2Pivotal[SwingLinkInfoIndex][0];
   int EndEffectorIndexB = RMObject.EndEffectorLink2Pivotal[SwingLinkInfoIndex][1];
-  // std::vector<double> qDesConfigOri = EndEffectorOriOptimazation( SimRobotObj, SwingLinkInfoIndex, 
-  //                                                                 EndEffectorIndexA, EndEffectorIndexB, 
-  //                                                                 EndEffectorProjx, EndEffectorProjy, 
-  //                                                                 SimParaObj.DirectionGoal);
-  // // std::string ConfigPath = "./";
-  // // std::string OptConfigFile = "qDesConfig.config";
-  // // RobotConfigWriter(qDesConfig, ConfigPath, OptConfigFile);
+  std::vector<double> qDesConfigOri = EndEffectorOriOptimazation( SimRobotObj, SwingLinkInfoIndex, 
+                                                                  EndEffectorIndexA, EndEffectorIndexB, 
+                                                                  EndEffectorProjx, EndEffectorProjy, 
+                                                                  SimParaObj.DirectionGoal);
+  // std::string ConfigPath = "./";
+  // std::string OptConfigFile = "qDesConfig.config";
+  // RobotConfigWriter(qDesConfig, ConfigPath, OptConfigFile);
 
-  // qDesConfig[EndEffectorIndexA] = qDesConfigOri[EndEffectorIndexA];
-  // qDesConfig[EndEffectorIndexB] = qDesConfigOri[EndEffectorIndexB];
+  qDesConfig[EndEffectorIndexA] = qDesConfigOri[EndEffectorIndexA];
+  qDesConfig[EndEffectorIndexB] = qDesConfigOri[EndEffectorIndexB];
 
   // OptConfigFile = "qDesConfigOri.config";
   // RobotConfigWriter(qDesConfig, ConfigPath, OptConfigFile);
 
-  bool IKFlag = true;
-  Vector3 GoalPos(GoalPosVec);
-  // std::vector<double> qVisConfigIK = IKConfigOptimazation(SimRobotObj, RMObject, SelfLinkGeoObj, GoalPos, SwingLinkInfoIndex, IKFlag);
-  std::vector<double> qVisConfigIK = IKOrientationConfigOptimazation(SimRobotObj, RMObject, SelfLinkGeoObj, GoalPos, SimParaObj.DirectionGoal, SwingLinkInfoIndex, sCur, EndEffectorProjx, EndEffectorProjy, IKFlag);
-  if(IKFlag){
-    qVisConfig = qVisConfigIK;
-    std::vector<int> SwingLinkChain = RMObject.EndEffectorLink2Pivotal[SwingLinkInfoIndex];
-    for (int i = 0; i < SwingLinkChain.size(); i++){
-      qDesConfig[SwingLinkChain[i]] = qVisConfig[SwingLinkChain[i]];
-    }
-    // qDesConfig[EndEffectorIndexA] = qDesConfigOri[EndEffectorIndexA];
-    // qDesConfig[EndEffectorIndexB] = qDesConfigOri[EndEffectorIndexB];
-  }
+  // bool IKFlag = true;
+  // Vector3 GoalPos(GoalPosVec);
+  // // std::vector<double> qVisConfigIK = IKConfigOptimazation(SimRobotObj, RMObject, SelfLinkGeoObj, GoalPos, SwingLinkInfoIndex, IKFlag);
+  // std::vector<double> qVisConfigIK = IKOrientationConfigOptimazation(SimRobotObj, RMObject, SelfLinkGeoObj, GoalPos, SimParaObj.DirectionGoal, SwingLinkInfoIndex, sCur, EndEffectorProjx, EndEffectorProjy, IKFlag);
+  // if(IKFlag){
+  //   qVisConfig = qVisConfigIK;
+  //   std::vector<int> SwingLinkChain = RMObject.EndEffectorLink2Pivotal[SwingLinkInfoIndex];
+  //   for (int i = 0; i < SwingLinkChain.size(); i++){
+  //     qDesConfig[SwingLinkChain[i]] = qVisConfig[SwingLinkChain[i]];
+  //   }
+  //   // qDesConfig[EndEffectorIndexA] = qDesConfigOri[EndEffectorIndexA];
+  //   // qDesConfig[EndEffectorIndexB] = qDesConfigOri[EndEffectorIndexB];
+  // }
   // Config PlanqConfig(qVisConfigIK);
 
   for (int i = 0; i < SwingLinkChain.size(); i++)

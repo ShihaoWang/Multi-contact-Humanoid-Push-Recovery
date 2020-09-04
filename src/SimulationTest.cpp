@@ -35,7 +35,7 @@ int SimulationTest(WorldSimulation & Sim, const std::vector<ContactStatusInfo> &
   // while(Sim.time <= SimParaObj.TotalDuration + SimParaObj.InitDuration){
   //   Robot TempSimRobot = *Sim.world->robots[0];
   //   double TempTime = Sim.time - InitTime;
-  //   // std::vector<double> TempqDes = SimpleCartesianControllerTest(TempSimRobot, InitConfig, 2, TempTime, SimParaObj.TimeStep);
+  //   std::vector<double> TempqDes = SimpleCartesianControllerTest(TempSimRobot, InitConfig, 2, TempTime, SimParaObj.TimeStep);
   //   NewControllerPtr->SetPIDCommand(Config(InitConfig));
   //   StateLogger(Sim, CtrlStateTraj, PlanStateTraj, qDes, SimParaObj);
   //   Sim.Advance(SimParaObj.TimeStep);

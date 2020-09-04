@@ -225,15 +225,16 @@ static std::vector<Vector3> OptimalContactSearcher( Robot SimRobot,     const PI
       InvertedPendulumInfo InvertedPendulumObj(PIPObj.L, PIPObj.g, PIPObj.theta, PIPObj.thetadot, COMPos, COMVel);
       InvertedPendulumObj.setEdges(PIPObj.edge_a, PIPObj.edge_b);
 
-      // std::string ConfigPath = "./";
-      // std::string OptConfigFile = "BeforeRot.config";
-      // RobotConfigWriter(SimRobot.q, ConfigPath, "BeforeRot.config");
+      double ForwardTime = 0.0;
+      if(ContactFormObj.SwingLinkInfoIndex<=1)
+        ForwardTime = SimParaObj.FootForwardDuration;
+      else 
+        ForwardTime = SimParaObj.HandForwardDuration;
+      
       bool MotionFlag = true;
-      Config UpdatedConfig  = WholeBodyDynamicsIntegrator(SimRobot, InvertedPendulumObj, SimParaObj.ForwardDuration, MotionFlag);
+      Config UpdatedConfig  = WholeBodyDynamicsIntegrator(SimRobot, InvertedPendulumObj, ForwardTime, MotionFlag);
       SimRobot.UpdateConfig(UpdatedConfig);
-      // RobotConfigWriter(SimRobot.q, ConfigPath, "AfterRot.config");
       if(!MotionFlag){
-        // std::printf("Whole-Body Motion Invalid for Contact Search!\n");
         return OptimalContact;
       } 
 

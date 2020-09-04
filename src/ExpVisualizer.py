@@ -471,7 +471,7 @@ def PlanningInterval(SimulationTime, PlanningTimeList, TimeStep):
 def ContactDataRefine(ContactPts, ContactWeights_array):
     # This function is used to address the Klampt visualization problem
     ContactPointSize = ContactWeights_array.size/3
-    if ContactPointSize>50:
+    if ContactPointSize>20:
         ContactWeightLists = []
         for i in range(ContactPointSize):
             ContactWeight_i = ContactWeights_array[i]
@@ -711,6 +711,7 @@ def main():
 
     world = WorldModel()                    	# WorldModel is a pre-defined class
     EnviName = "flat_1Contact/"
+    # DataDir = "/home/motion/Desktop/Whole-Body-Planning-for-Push-Recovery-Data (copy)/" + EnviName
     DataDir = "/home/motion/Desktop/Whole-Body-Planning-for-Push-Recovery-Data/" + EnviName
     XML_path = DataDir + "/Envi.xml"
     result = world.readFile(XML_path)         	# Here result is a boolean variable indicating the result of this loading operation
@@ -725,7 +726,8 @@ def main():
     SpecificPath = CurCasePath + "/" + str(CaseNo)
     PlanStateTraj.load(SpecificPath + "/PlanStateTraj.path")
     CtrlStateTraj.load(SpecificPath+ "/CtrlStateTraj.path")
-    FailureStateTraj.load(SpecificPath + "/FailureStateTraj.path")
+    if os.path.exists(SpecificPath + "/FailureStateTraj.path"):
+        FailureStateTraj.load(SpecificPath + "/FailureStateTraj.path")
     ExpTraj = [FailureStateTraj, CtrlStateTraj, PlanStateTraj]
     PIPInfoList = PIPTrajReader(SpecificPath)
     StartTime, EndTime, ImpulForce = ImpulseInfoReader(SpecificPath)

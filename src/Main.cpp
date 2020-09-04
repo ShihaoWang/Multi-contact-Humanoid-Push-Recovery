@@ -92,7 +92,8 @@ int main(int argc, char** argv){
   double InitDuration     = 1.0;
   double TotalDuration    = 5.0;                     // Simulation lasts for 5s after initial duration
 
-  double ForwardDuration  = 0.5;
+  double FootForwardDuration  = 0.5;
+  double HandForwardDuration  = 0.75;
   double PhaseRatio       = 0.6;
   double ReductionRatio   = 0.5;
 
@@ -164,7 +165,7 @@ int main(int argc, char** argv){
         ForceFile.close();
         SimPara SimParaObj( ImpulseForce, PushDuration,   DetectionWait, 
                             TimeStep,     InitDuration,   TotalDuration, 
-                            ForwardDuration, PhaseRatio,  ReductionRatio);
+                            FootForwardDuration, HandForwardDuration, PhaseRatio,  ReductionRatio);
         SimParaObj.setImpulseForceMax(ImpulseDirection);
         SelfLinkGeoInfo SelfLinkGeoObj(*worldObj.robots[0], RMObject.EndEffectorLink2Pivotal, SelfCollisionFreeLink);
         mainInner(ExperimentFolderPath, FileIndex, i+1, RMObject, SelfLinkGeoObj, SimParaObj);

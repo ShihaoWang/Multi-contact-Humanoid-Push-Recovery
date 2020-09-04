@@ -132,9 +132,9 @@ def Robot_Config_Plot(world, DOF, config_init):
     # # 2. Active Reachable Points
     # ReachableContacts_data = ContactDataLoader("ReachableContacts")
     # # 3. Contact Free Points
-    # CollisionFreeContacts_data = ContactDataLoader("CollisionFreeContacts")
+    CollisionFreeContacts_data = ContactDataLoader("CollisionFreeContacts")
     # # 4. Supportive Points
-    # SupportiveContacts_data = ContactDataLoader("SupportiveContacts")
+    SupportiveContacts_data = ContactDataLoader("SupportiveContacts")
 
     OptimalContact_data = ContactDataLoader("OptimalContact")
 
@@ -153,8 +153,8 @@ def Robot_Config_Plot(world, DOF, config_init):
     #
     # ReducedOptimalContact_data = ContactDataLoader("ReducedOptimalContact")
 
-    ContactChoice = InitialTransitionPoints_data
-    # ContactChoice = SupportiveContacts_data
+    # ContactChoice = InitialTransitionPoints_data
+    ContactChoice = CollisionFreeContacts_data
     SimRobot = world.robot(0)
     SimRobot.setConfig(config_init)
     while vis.shown():

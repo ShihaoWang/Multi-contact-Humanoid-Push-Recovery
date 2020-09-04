@@ -106,11 +106,11 @@ struct TrajConfigOpt: public NonlinearOptimizerInfo
   }
 };
 
-std::vector<double> TrajConfigOptimazation(const Robot & SimRobot, ReachabilityMap & RMObject, SelfLinkGeoInfo & _SelfLinkGeoObj, SimPara & SimParaObj, const double & EndEffectorProjx, const double & EndEffectorProjy, double sVal){
+std::vector<double> TrajConfigOptimazation(const Robot & SimRobot, ReachabilityMap & RMObject, SelfLinkGeoInfo & _SelfLinkGeoObj, bool OneHandAlreadyFlag, SimPara & SimParaObj, const double & EndEffectorProjx, const double & EndEffectorProjy, double sVal){
   // This function is used to optimize robot's configuration such that a certain contact can be reached for that end effector.
   SimRobotObj = SimRobot;
   SwingLinkInfoIndex = SimParaObj.getSwingLinkInfoIndex();
-  SwingLinkChain = RMObject.EndEffectorLink2Pivotal[SwingLinkInfoIndex];
+  SwingLinkChain = SwingLinkChainSelector(RMObject, SwingLinkInfoIndex, OneHandAlreadyFlag);
   GoalPos = SimParaObj.getCurrentContactPos();
   GoalDir = SimParaObj.getGoalDirection();
   ReferenceConfig = SimRobot.q;
@@ -225,18 +225,18 @@ std::vector<double> TrajConfigOptimazation(const Robot & SimRobot, ReachabilityM
       OptFlag = false;
   }
 
-  Vector3 EndEffectorAvgPos;
-  SimRobotObj.GetWorldPosition(NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].AvgLocalContact, NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].LinkIndex, EndEffectorAvgPos);
-  Vector3 AvgDiff = EndEffectorAvgPos - GoalPos;
-  double DistTestTol = 0.0625;
-  double DistTest = AvgDiff.normSquared();
-  double sTol = 1e-3;
-  if(sVal * sVal>=(1.0 - sTol)){
-    if(DistTest>DistTestTol){
-      std::printf("TrajConfigOptimazation Failure due to Goal Contact Non-reachability for Link %d! \n", NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].LinkIndex);
-      OptFlag = false;
-      }
-  }
+  // Vector3 EndEffectorAvgPos;
+  // SimRobotObj.GetWorldPosition(NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].AvgLocalContact, NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].LinkIndex, EndEffectorAvgPos);
+  // Vector3 AvgDiff = EndEffectorAvgPos - GoalPos;
+  // double DistTestTol = 0.0625;
+  // double DistTest = AvgDiff.normSquared();
+  // double sTol = 1e-3;
+  // if(sVal * sVal>=(1.0 - sTol)){
+  //   if(DistTest>DistTestTol){
+  //     std::printf("TrajConfigOptimazation Failure due to Goal Contact Non-reachability for Link %d! \n", NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].LinkIndex);
+  //     OptFlag = false;
+  //     }
+  // }
 
   // double EnviTol = 0.05; // 5cm
   // if(sVal * sVal>=(1.0 - EdgeCaseTol)){

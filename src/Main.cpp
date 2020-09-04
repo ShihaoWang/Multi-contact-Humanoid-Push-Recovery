@@ -93,7 +93,7 @@ int main(int argc, char** argv){
   double TotalDuration    = 5.0;                     // Simulation lasts for 5s after initial duration
 
   double FootForwardDuration  = 0.5;
-  double HandForwardDuration  = 0.75;
+  double HandForwardDuration  = 0.6;
   double PhaseRatio       = 0.6;
   double ReductionRatio   = 0.5;
 

@@ -358,13 +358,6 @@ void PlanResWriter(const string & CurrentCasePath, const int & PushRecovFlag){
   PlanResWriter.close();
 }
 
-void SwingLinkStatePrint(const std::vector<double> & Config, const std::vector<int> & SwingLinkChain){
-  for (int i = 0; i < SwingLinkChain.size(); i++) {
-    std::printf("%f ", Config[SwingLinkChain[i]]);
-  }
-  std::printf("\n");
-}
-
 void getEndEffectorXYAxes(const Robot & SimRobotInner, const int & SwingLinkInfoIndex, Vector3 & EndEffectorInitxDir, Vector3 & EndEffectorInityDir){
   RobotLink3D EndEffectorLink = SimRobotInner.links[NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].LinkIndex];
 
@@ -411,4 +404,50 @@ QuaternionRotation getEndEffectorQuaternion(const Robot & SimRobotInner, int Swi
   EndEffectorQuaternion.setMatrix(RotMat);
 
   return EndEffectorQuaternion;
+}
+QuaternionRotation QuaternionRotationReference(double InnerTime, const ControlReferenceInfo & ControlReference){
+  if(InnerTime<0.0) return ControlReference.OrientationQuat.front();
+  if(InnerTime>=ControlReference.TimeTraj.back()) return ControlReference.OrientationQuat.back();
+  int NextPosInd = 0;
+  for (int i = 0; i < ControlReference.TimeTraj.size()-1; i++){
+      if(InnerTime<=ControlReference.TimeTraj[i+1]){
+          NextPosInd = i+1;
+          break;
+      }
+  }
+
+  Quaternion q0Klampt = ControlReference.OrientationQuat[NextPosInd-1];
+  Quaternion q1Klampt = ControlReference.OrientationQuat[NextPosInd];
+  double t0 = ControlReference.TimeTraj[NextPosInd-1];
+  double t1 = ControlReference.TimeTraj[NextPosInd];
+  double t = (InnerTime-t0)/(t1 - t0);
+
+  Eigen::Quaterniond q0(q0Klampt.data[0], q0Klampt.data[1], q0Klampt.data[2], q0Klampt.data[3]);
+  Eigen::Quaterniond q1(q1Klampt.data[0], q1Klampt.data[1], q1Klampt.data[2], q1Klampt.data[3]);
+
+  Eigen::Quaterniond qres = q0.slerp(t, q1);
+
+  QuaternionRotation qout(qres.w(), qres.x(), qres.y(), qres.z());
+  return qout;
+}
+
+
+std::vector<int> SwingLinkChainSelector(ReachabilityMap & RMObject, int SwingLinkInfoIndex, bool OneHandAlreadyFlag){
+  std::vector<int> SwingLinkChain;
+  if(SwingLinkInfoIndex<=1){
+    SwingLinkChain = RMObject.EndEffectorLink2Pivotal[SwingLinkInfoIndex];
+  } else {
+    if(OneHandAlreadyFlag){
+      if(SwingLinkInfoIndex == 2){  
+        SwingLinkChain = RMObject.Link34ToPivotal;
+      } else SwingLinkChain = RMObject.Link27ToPivotal;
+    } else SwingLinkChain = RMObject.EndEffectorLink2Pivotal[SwingLinkInfoIndex];
+  }
+  return SwingLinkChain;
+}
+
+bool OneHandAlreadyChecker(ContactForm ContactFormObj){
+  if((ContactFormObj.FixedContactStatusInfo[2].LocalContactStatus[0])&&(ContactFormObj.SwingLinkInfoIndex == 3)) return true;
+  if((ContactFormObj.FixedContactStatusInfo[3].LocalContactStatus[0])&&(ContactFormObj.SwingLinkInfoIndex == 2)) return true;
+  return false;
 }

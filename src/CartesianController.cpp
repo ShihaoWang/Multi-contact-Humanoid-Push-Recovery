@@ -1,39 +1,11 @@
 #include "CommonHeader.h"
 #include "NonlinearOptimizerInfo.h"
-#include <Eigen/QR>    
-#include <Eigen/Geometry> 
 
 /* Based on
     "Closed-Loop Manipulator Control Using Quaternion Feedback" Joseph Yuan 1987
  */
 static double Kp = 0.0;        // Position Gain
 static double Ko = 5.0;        // Orientation Gain
-
-static QuaternionRotation QuaternionRotationReference(double InnerTime, const ControlReferenceInfo & ControlReference){
-    if(InnerTime<0.0) return ControlReference.OrientationQuat.front();
-    if(InnerTime>=ControlReference.TimeTraj.back()) return ControlReference.OrientationQuat.back();
-    int NextPosInd = 0;
-    for (int i = 0; i < ControlReference.TimeTraj.size()-1; i++){
-        if(InnerTime<=ControlReference.TimeTraj[i+1]){
-            NextPosInd = i+1;
-            break;
-        }
-    }
-    
-    Quaternion q0Klampt = ControlReference.OrientationQuat[NextPosInd-1];
-    Quaternion q1Klampt = ControlReference.OrientationQuat[NextPosInd];
-    double t0 = ControlReference.TimeTraj[NextPosInd-1];
-    double t1 = ControlReference.TimeTraj[NextPosInd];
-    double t = (InnerTime-t0)/(t1 - t0);
-
-    Eigen::Quaterniond q0(q0Klampt.data[0], q0Klampt.data[1], q0Klampt.data[2], q0Klampt.data[3]);
-    Eigen::Quaterniond q1(q1Klampt.data[0], q1Klampt.data[1], q1Klampt.data[2], q1Klampt.data[3]);
-
-    Eigen::Quaterniond qres = q0.slerp(t, q1);
-
-    QuaternionRotation qout(qres.w(), qres.x(), qres.y(), qres.z());
-    return qout;
-}
 
 std::vector<double> CartesianController(const Robot & SimRobot, const ControlReferenceInfo  & ControlReference, double InnerTime, double TimeStep){
     int SwingLinkInfoIndex = ControlReference.getSwingLinkInfoIndex();

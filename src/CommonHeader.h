@@ -16,6 +16,9 @@
 #include <KrisLibrary/math3d/rotation.h>
 #include "RobotInfo.h"
 #include "Spline.h"
+#include <Eigen/QR>    
+#include <Eigen/Geometry> 
+
 
 /* 0. Robot Info Initiaization */
 std::vector<LinkInfo> ContactInfoLoader(const string & ContactLinkFile, int & ContactPointNo);
@@ -45,14 +48,13 @@ std::vector<Vector3> ActiveContactFinder(const Robot & SimRobot, const std::vect
 // std::vector<double> YPRShifter(std::vector<double> OptConfig);
 void Vector3Writer(const std::vector<Vector3> & ContactPoints, const std::string & ContactPointFileName);
 std::vector<Vector3> BoxVertices(const Box3D & Box3DObj);
-std::pair<Config, Config> ConfigReferenceGene(const Robot & SimRobotObj,  double & InnerTime,
+std::pair<Config, Config> ConfigReferenceGene(const Robot & SimRobotObj,  double InnerTime,
                                         ReachabilityMap & RMObject, SelfLinkGeoInfo & SelfLinkGeoObj,
                                         ControlReferenceInfo & ControlReference, SimPara & SimParaObj);
 bool FailureChecker(Robot & SimRobot, ReachabilityMap & RMObject);
 void PlanTimeRecorder(const double & PlanTimeVal, const string & CurrentCasePath);
 void PlanningInfoFileAppender(const int & PlanStageIndex, const int & TotalLinkNo, const string & CurrentCasePath, const double & CurTime);
 void PlanResWriter(const string & SpecificPath, const int & PushRecovFlag);
-void SwingLinkStatePrint(const std::vector<double> & Config, const std::vector<int> & SwingLinkChain);
 bool PenetrationTester(const Robot & SimRobotObj, const int & SwingLinkInfoIndex);
 void getEndEffectorXYAxes(const Robot & SimRobotInner, const int & SwingLinkInfoIndex, Vector3 & EndEffectorInitxDir, Vector3 & EndEffectorInityDir);
 double EstimatedFailureMetric(const Robot & SimRobotInner, const std::vector<ContactStatusInfo> & GoalContactInfo, const Vector3 & COMPos, const Vector3 & COMVel);
@@ -61,7 +63,10 @@ Vector3 ContactForceFinder(WorldSimulation & Sim);
 void ContactForceAppender(const char *CFFile_Name, double Time_t, Vector3 Force);
 void KineticEnergyAppender(const char *KEFile_Name, double Time_t, double KE);
 double EdgeProjMagnitude(double cur_s,  Vector3 InitxDir, Vector3 GoalDir);
+QuaternionRotation QuaternionRotationReference(double InnerTime, const ControlReferenceInfo & ControlReference);
 QuaternionRotation getEndEffectorQuaternion(const Robot & SimRobotInner, int SwingLinkInfoIndex);
+std::vector<int> SwingLinkChainSelector(ReachabilityMap & RMObject, int SwingLinkInfoIndex, bool OneHandAlreadyFlag);
+bool OneHandAlreadyChecker(ContactForm ContactFormObj);
 
 /* 4. Main Simulation*/
 void InitialSimulation(WorldSimulation & Sim, const SimPara & SimParaObj, LinearPath & CtrlStateTraj, LinearPath & PlanStateTraj);
@@ -86,23 +91,13 @@ std::vector<double> CurrentBaseDeltaCal(const Robot & _SimRobot, const InvertedP
 /* 8. Transient Path Generation*/
 CubicSplineInfo TransientPathGene(const Robot & SimRobot, SelfLinkGeoInfo & SelfLinkGeoObj, SimPara & SimParaObj);
 ControlReferenceInfo TrajectoryPlanning(Robot & SimRobotInner, const InvertedPendulumInfo & InvertedPendulumObj, ReachabilityMap & RMObject,SelfLinkGeoInfo & SelfLinkGeoObj,
-                                        EndEffectorPathInfo & EndEffectorPathObj, SimPara & SimParaObj);
-std::vector<double> TrajConfigOptimazation(const Robot & SimRobot, ReachabilityMap & RMObject, SelfLinkGeoInfo & _SelfLinkGeoObj, SimPara & SimParaObj, const double & EndEffectorProjx, const double & EndEffectorProjy, double sVal);
-std::vector<double> LastStageConfigOptimazation(const Robot & SimRobot, ReachabilityMap & RMObject, SelfLinkGeoInfo & _SelfLinkGeoObj, SimPara & SimParaObj, bool & LastStageFlag);
+                                        EndEffectorPathInfo & EndEffectorPathObj, bool OneHandAlreadyFlag, SimPara & SimParaObj);
+std::vector<double> TrajConfigOptimazation(const Robot & SimRobot, ReachabilityMap & RMObject, SelfLinkGeoInfo & _SelfLinkGeoObj, bool OneHandAlreadyFlag, SimPara & SimParaObj, const double & EndEffectorProjx, const double & EndEffectorProjy, double sVal);
+std::vector<double> LastStageConfigOptimazation(const Robot & SimRobot, ReachabilityMap & RMObject, SelfLinkGeoInfo & _SelfLinkGeoObj, int SwingLinkInfoIndex_, bool OneHandAlreadyFlag, SimPara & SimParaObj, bool & LastStageFlag);
 ControlReferenceInfo TaskTrajectoryPlanning(Robot & SimRobotInner, const InvertedPendulumInfo & InvertedPendulumInner, ReachabilityMap & RMObject,SelfLinkGeoInfo & SelfLinkGeoObj,
                                             EndEffectorPathInfo & EndEffectorPathObj, SimPara & SimParaObj);
-bool TaskTrajectoryPlanningInner( const double & _sVal, double & _sNew,
-                                  Robot & _SimRobotInner,
-                                  const Config & _PreVelocity,                      const std::vector<double> & _CurrentBaseDelta,
-                                  const Config & _CurrentConfig,                    const Config & _CurrentVelocity,
-                                  std::vector<double> & _NextConfig,                std::vector<double> & _NextVelocity,
-                                  const EndEffectorPathInfo & EndEffectorPathInner, const std::vector<int> & _SwingLinkChain,
-                                  const Vector3 & _EndEffectorInitxDir,             const Vector3 & _EndEffectorInityDir,
-                                  SimPara & _SimParaObj,
-                                  const double & _StageTime,                        const double & _DampingRatio);
 /* 9. IK Controller*/
-std::vector<double> IKConfigOptimazation(const Robot & SimRobot, ReachabilityMap & RMObject, SelfLinkGeoInfo & SelfLinkGeoObj_, Vector3 GoalPos_, int SwingLinkInfoIndex_, bool & OptFlag);
-std::vector<double> IKOrientationConfigOptimazation(const Robot & SimRobot, ReachabilityMap & RMObject, SelfLinkGeoInfo & SelfLinkGeoObj_, Vector3 GoalPos_, Vector3 GoalDir_, int SwingLinkInfoIndex_, double sCur, double EndEffectorProjx, double EndEffectorProjy, bool & OptFlag);
+std::vector<double> IKQuaternion(const Robot & SimRobot, ReachabilityMap & RMObject, SelfLinkGeoInfo & SelfLinkGeoObj_, const ControlReferenceInfo  & ControlReference, double InnerTime, bool & IKFlag);
 
 /* 10. Cartesian Controller */
 std::vector<double> CartesianController(const Robot & SimRobot, const ControlReferenceInfo  & ControlReference, double InnerTime, double TimeStep);
@@ -110,5 +105,6 @@ std::vector<double> SimpleCartesianControllerTest(const Robot & SimRobot, const 
 
 
 std::vector<double> EndEffectorOriOptimazation(const Robot & SimRobot, int SwingLinkInfoIndex_, int EndEffectorIndexA_, int EndEffectorIndexB_, double EndEffectorProjx_, double EndEffectorProjy_, Vector3 GoalDir_);
+
 
 #endif

@@ -308,7 +308,7 @@ static bool StageStateOptimization( const double & sVal, const double & sUnit, d
                                     std::vector<double> & NextConfig, std::vector<double> & NextVelocity,
                                     ReachabilityMap & RMObject, SelfLinkGeoInfo & SelfLinkGeoObj,
                                     EndEffectorPathInfo & EndEffectorPathObj, const std::vector<int> & SwingLinkChain,
-                                    SimPara & SimParaObj, double & StageTime){
+                                    bool OneHandAlreadyFlag, SimPara & SimParaObj, double & StageTime){
   int TotalInter = 25;
   int IterInd = 0;
   Vector3 EndEffectorGoalDir = SimParaObj.getGoalDirection();
@@ -323,7 +323,7 @@ static bool StageStateOptimization( const double & sVal, const double & sUnit, d
     SimParaObj.setCurrentContactPos(PlannedCurrentContactPos);
     double EndEffectorProjx = EdgeProjMagnitude(sCur, SimParaObj.EndEffectorInitxDir, EndEffectorGoalDir);
     double EndEffectorProjy = EdgeProjMagnitude(sCur, SimParaObj.EndEffectorInityDir, EndEffectorGoalDir);
-    NextConfig = TrajConfigOptimazation(SimRobotInner, RMObject, SelfLinkGeoObj, SimParaObj, EndEffectorProjx, EndEffectorProjy, sCur);
+    NextConfig = TrajConfigOptimazation(SimRobotInner, RMObject, SelfLinkGeoObj, OneHandAlreadyFlag, SimParaObj, EndEffectorProjx, EndEffectorProjy, sCur);
     NextVelocity = CurrentVelocity;
     Config UpdatedConfig;
     bool FinderFlag;
@@ -352,7 +352,7 @@ static bool StageStateOptimization( const double & sVal, const double & sUnit, d
 }
 
 ControlReferenceInfo TrajectoryPlanning(Robot & SimRobotInner, const InvertedPendulumInfo & InvertedPendulumInner, ReachabilityMap & RMObject,SelfLinkGeoInfo & SelfLinkGeoObj,
-                                        EndEffectorPathInfo & EndEffectorPathObj, SimPara & SimParaObj){
+                                        EndEffectorPathInfo & EndEffectorPathObj, bool OneHandAlreadyFlag, SimPara & SimParaObj){
 
 
   InvertedPendulumInfo InvertedPendulumObj = InvertedPendulumInner;
@@ -362,7 +362,7 @@ ControlReferenceInfo TrajectoryPlanning(Robot & SimRobotInner, const InvertedPen
   Vector3 EndEffectorGoalDir = SimParaObj.getGoalDirection();
   SimParaObj.EndEffectorInitxDir = EndEffectorInitxDir;
   SimParaObj.EndEffectorInityDir = EndEffectorInityDir;
-  std::vector<int> SwingLinkChain = RMObject.EndEffectorLink2Pivotal[SwingLinkInfoIndex];
+  std::vector<int> SwingLinkChain =  SwingLinkChainSelector(RMObject, SwingLinkInfoIndex, OneHandAlreadyFlag);
 
   QuaternionRotation InitEndEffectorQuaternion = getEndEffectorQuaternion(SimRobotInner, SwingLinkInfoIndex);
 
@@ -405,16 +405,16 @@ ControlReferenceInfo TrajectoryPlanning(Robot & SimRobotInner, const InvertedPen
     QuaternionRotation OrientationQuat_i;
     bool StageOptFlag = StageStateOptimization( sVal, sUnit, sNew, CurrentContactPos, SimRobotInner, CurrentConfig, WholeBodyVelocityTraj.back(),
                                                 NextConfig, NextVelocity, RMObject, SelfLinkGeoObj, EndEffectorPathObj, SwingLinkChain,
-                                                SimParaObj, StageTime);
+                                                OneHandAlreadyFlag, SimParaObj, StageTime);
     sVal = sNew;
     if(!StageOptFlag) break;
     SimRobotInner.UpdateConfig(Config(NextConfig));
     bool MotionFlag; 
     Config UpdatedConfig  = WholeBodyDynamicsIntegrator(SimRobotInner, InvertedPendulumObj, StageTime, MotionFlag);
 
-    // std::string ConfigPath = "./";
-    // std::string OptConfigFile = "StageConfig" + to_string(sIndex) + ".config";
-    // RobotConfigWriter(UpdatedConfig, ConfigPath, OptConfigFile);
+    std::string ConfigPath = "./";
+    std::string OptConfigFile = "StageConfig" + to_string(sIndex) + ".config";
+    RobotConfigWriter(UpdatedConfig, ConfigPath, OptConfigFile);
 
     if(!MotionFlag) break;
     SimRobotInner.UpdateConfig(UpdatedConfig);
@@ -422,7 +422,7 @@ ControlReferenceInfo TrajectoryPlanning(Robot & SimRobotInner, const InvertedPen
       PenetrationFlag = PenetrationTester(SimRobotInner, SwingLinkInfoIndex);
       if((PenetrationFlag)||(sVal>=1.0)){
         bool LastStageFlag;
-        UpdatedConfig = LastStageConfigOptimazation(SimRobotInner, RMObject, SelfLinkGeoObj, SimParaObj, LastStageFlag);
+        UpdatedConfig = LastStageConfigOptimazation(SimRobotInner, RMObject, SelfLinkGeoObj, SwingLinkInfoIndex, OneHandAlreadyFlag, SimParaObj, LastStageFlag);
         if(!LastStageFlag) return ControlReferenceObj;
       }
     }
@@ -482,6 +482,7 @@ ControlReferenceInfo TrajectoryPlanning(Robot & SimRobotInner, const InvertedPen
     ControlReferenceObj.OrientationQuat = OrientationQuat;
     double EstFailureMetric = EstimatedFailureMetric(SimRobotInner, GoalContactInfo, InvertedPendulumObj.COMPos, InvertedPendulumObj.COMVel);
     ControlReferenceObj.setFailueMetric(EstFailureMetric);
+    ControlReferenceObj.setOneHandAlreadyFlag(OneHandAlreadyFlag);
     ControlReferenceObj.setReadyFlag(true);
   }
   return ControlReferenceObj;

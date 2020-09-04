@@ -809,6 +809,7 @@ struct ControlReferenceInfo{
   ControlReferenceInfo(){
     ReadyFlag = false;
     TouchDownFlag = false;
+    OneHandAlreadyFlag = false;
     ControlReferenceType = -1;
     SwingLinkInfoIndex = -1;           // Used for RobotLinkInfo
     ContactStatusInfoIndex = -1;
@@ -824,6 +825,8 @@ struct ControlReferenceInfo{
   void setReadyFlag(const bool & _ReadyFlag ){ ReadyFlag = _ReadyFlag; }
   void setTouchDownFlag(const bool & _TouchDownFlag){ TouchDownFlag=_TouchDownFlag; }
   bool getTouchDownFlag(){ return TouchDownFlag; }
+  void setOneHandAlreadyFlag(bool Value) {OneHandAlreadyFlag = Value;}
+  bool getOneHandAlreadyFlag() const { return OneHandAlreadyFlag; };
   int  getControlReferenceType() const{ return ControlReferenceType; }
   void setControlReferenceType(const int &_ControlReferenceType) { ControlReferenceType = _ControlReferenceType; }
   void setGoalContactPosNGrad(const Vector3 & _GoalContactPos, const Vector3 & _GoalContactGrad){
@@ -863,6 +866,7 @@ struct ControlReferenceInfo{
 
   bool    ReadyFlag;
   bool    TouchDownFlag;
+  bool    OneHandAlreadyFlag;   
   int     ControlReferenceType;
   int     SwingLinkInfoIndex;
   int     ContactStatusInfoIndex;

@@ -8,7 +8,7 @@ static Vector3 GoalPos;
 static Vector3 GoalDir;
 static std::vector<double> ReferenceConfig, OriginalConfig;
 static SelfLinkGeoInfo SelfLinkGeoObj;
-static double EndEffectorDistTol = 0.01;  // 1cm
+static double EndEffectorDistTol = 0.005;  // 0.5cm
 static double LastStageTol = 0.0025;      // 2.5mm
 
 struct LastStageConfigOpt: public NonlinearOptimizerInfo
@@ -73,11 +73,11 @@ struct LastStageConfigOpt: public NonlinearOptimizerInfo
   }
 };
 
-std::vector<double> LastStageConfigOptimazation(const Robot & SimRobot, ReachabilityMap & RMObject, SelfLinkGeoInfo & _SelfLinkGeoObj, SimPara & SimParaObj, bool & LastStageFlag){
+std::vector<double> LastStageConfigOptimazation(const Robot & SimRobot, ReachabilityMap & RMObject, SelfLinkGeoInfo & _SelfLinkGeoObj, int SwingLinkInfoIndex_, bool OneHandAlreadyFlag, SimPara & SimParaObj, bool & LastStageFlag){
   // This function is used to optimize robot's configuration such that a certain contact can be reached for that end effector.
   SimRobotObj = SimRobot;
-  SwingLinkInfoIndex = SimParaObj.getSwingLinkInfoIndex();
-  SwingLinkChain = RMObject.EndEffectorLink2Pivotal[SwingLinkInfoIndex];
+  SwingLinkInfoIndex = SwingLinkInfoIndex_;
+  SwingLinkChain = SwingLinkChainSelector(RMObject, SwingLinkInfoIndex, OneHandAlreadyFlag);
   GoalPos = SimParaObj.getCurrentContactPos();
   GoalDir = SimParaObj.getGoalDirection();
   ReferenceConfig = SimRobot.q;
@@ -154,9 +154,9 @@ std::vector<double> LastStageConfigOptimazation(const Robot & SimRobot, Reachabi
   SimRobotObj.UpdateConfig(Config(OptConfig));
   SimRobotObj.UpdateGeometry();
 
-  // std::string ConfigPath = "./";
-  // std::string OptConfigFile = "TrajOptConfig.config";
-  // RobotConfigWriter(OptConfig, ConfigPath, OptConfigFile);
+  std::string ConfigPath = "./";
+  std::string OptConfigFile = "TrajOptConfig.config";
+  RobotConfigWriter(OptConfig, ConfigPath, OptConfigFile);
   LastStageFlag = true;
   Vector3 EndEffectorAvgPos;
   SimRobotObj.GetWorldPosition( NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].AvgLocalContact, 
@@ -164,8 +164,8 @@ std::vector<double> LastStageConfigOptimazation(const Robot & SimRobot, Reachabi
                                 EndEffectorAvgPos);
   double EndEffectorDist = NonlinearOptimizerInfo::SDFInfo.SignedDistance(EndEffectorAvgPos);
   double DistTestTol = 0.01;
-  if(DistTestTol * DistTestTol>EndEffectorDist * EndEffectorDist){
-      std::printf("TrajConfigOptimazation Failure due to Goal Contact Non-reachability for Link %d! \n", 
+  if(DistTestTol * DistTestTol<=EndEffectorDist * EndEffectorDist){
+      std::printf("LastStageOptimization Failure due to Goal Contact Too High for Link %d! \n", 
                     NonlinearOptimizerInfo::RobotLinkInfo[SwingLinkInfoIndex].LinkIndex);
       LastStageFlag = false;
   }

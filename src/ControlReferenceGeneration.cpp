@@ -265,7 +265,10 @@ static std::vector<Vector3> OptimalContactSearcher( Robot SimRobot,     const PI
       return OptimalContact;
     }
 
-static ControlReferenceInfo ControlReferenceGeneInner(const Robot & SimRobot, const PIPInfo & TipOverPIPObj, ReachabilityMap & RMObject, SelfLinkGeoInfo & SelfLinkGeoObj, const ContactForm & ContactFormObj, SimPara & SimParaObj){
+static ControlReferenceInfo ControlReferenceGeneInner(const Robot & SimRobot, const PIPInfo & TipOverPIPObj, 
+                                                      ReachabilityMap & RMObject, SelfLinkGeoInfo & SelfLinkGeoObj, 
+                                                      const ContactForm & ContactFormObj, bool OneHandAlreadyFlag, 
+                                                      SimPara & SimParaObj){
   ControlReferenceInfo ControlReferenceObj;
   Vector3 ContactInit;       // This is the position of the reference contact for robot's active end effector.
   SimRobot.GetWorldPosition(NonlinearOptimizerInfo::RobotLinkInfo[SimParaObj.SwingLinkInfoIndex].AvgLocalContact,
@@ -296,8 +299,8 @@ static ControlReferenceInfo ControlReferenceGeneInner(const Robot & SimRobot, co
       4. Based on that time, robot's whole-body configuration is updated with inverted pendulum model.
       5. The whole algorithm terminates when robot's self-collision has been triggered or no feasible IK solution can be found.
       */
-      ControlReferenceObj = TrajectoryPlanning(SimRobotInner, InvertedPendulumObj, RMObject, SelfLinkGeoObj,
-        EndEffectorPathObj, SimParaObj);
+      ControlReferenceObj = TrajectoryPlanning( SimRobotInner, InvertedPendulumObj, RMObject, SelfLinkGeoObj,
+                                                EndEffectorPathObj, OneHandAlreadyFlag, SimParaObj);
         if(ControlReferenceObj.getReadyFlag()) break;
       }
     }
@@ -329,7 +332,8 @@ ControlReferenceInfo ControlReferenceGene(Robot & SimRobot,
    SimParaObj.setSwingLinkInfoIndex(ContactFormObj.SwingLinkInfoIndex);
    SimParaObj.setPlanEndEffectorIndex(PlanEndEffectorIndex);
    SimParaObj.DataRecorderObj.setPlanStageIndexNLinkNo(SimParaObj.getPlanStageIndex(), PlanEndEffectorIndex);
-   ControlReferenceInfo ControlReferenceObj =  ControlReferenceGeneInner(SimRobot, TipOverPIP, RMObject, SelfLinkGeoObj, ContactFormObj, SimParaObj);
+   bool OneHandAlreadyFlag = OneHandAlreadyChecker(ContactFormObj);
+   ControlReferenceInfo ControlReferenceObj =  ControlReferenceGeneInner(SimRobot, TipOverPIP, RMObject, SelfLinkGeoObj, ContactFormObj, OneHandAlreadyFlag, SimParaObj);
    double planning_time = (std::clock() - start_time)/(double)CLOCKS_PER_SEC;
   //  std::printf("Planning takes: %f ms\n", 1000.0 * planning_time);
    stage_planning_time+=planning_time;

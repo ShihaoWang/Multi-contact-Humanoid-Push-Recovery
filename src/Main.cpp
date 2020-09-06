@@ -7,7 +7,7 @@
 // Three Global Variables 
 std::vector<LinkInfo>   LinkInfoObj;
 SDFInfo                 SDFInfoObj;
-AnyCollisionGeometry3D  TerrColGeom;
+AnyCollisionGeometry3D  TerrColGeomObj;
 
 // static void mainInner(string ExperimentFolderPath, int FileIndex, int ExpIndex, ReachabilityMap & RMObject, SelfLinkGeoInfo & SelfLinkGeoObj, SimPara & SimParaObj){
   
@@ -80,55 +80,58 @@ int main(int argc, char** argv){
   std::vector<int> TorsoLinkIndices             = LinkIndicesLoader(UserFilePath, "TorsoLink.txt");
   std::vector<int> SelfCollisionFreeLinkIndices = LinkIndicesLoader(UserFilePath, "SelfCollisionFreeLink.txt");
 
-  //  /* 2. Setup Parameters for Algorithm */
-  // double PushDuration     = 0.50;
-  // double DetectionWait    = 0.25;
+   /* 1. Setup Parameters for Algorithm */
+  double PushDuration     = 0.50;
+  double DetectionWait    = 0.25;
 
-  // // Three inner variables
-  // double TimeStep         = 0.025;
-  // double InitDuration     = 1.0;
-  // double TotalDuration    = 5.0;                     // Simulation lasts for 5s after initial duration
+  double TimeStep         = 0.025;
+  double InitDuration     = 1.0;
+  double TotalDuration    = 5.0;                     // Simulation lasts for 5s after initial duration
 
-  // double FootForwardDuration  = 0.5;
-  // double HandForwardDuration  = 0.6;
-  // double PhaseRatio       = 0.6;
-  // double ReductionRatio   = 0.5;
+  double ForwardDurationSeed  = 0.5;
+  double PhaseRatio           = 0.6;
+  double ReductionRatio       = 0.5;
 
-  // std::vector<std::string> ScenarioVec;
-  // bool SpecifiedFlag = false;
-  // int FileIndex = 0;
-  // if(argc>1){
-  //   string ScenarioName(argv[1]);
-  //   ScenarioVec.push_back(ScenarioName);
-  //   FileIndex = atoi(argv[2]);
-  //   SpecifiedFlag = true;
-  // }else{
-  //   std::vector<std::string> ScenarioVecOption = { "flat_1Contact", "flat_2Contact", "uneven_1Contact", "uneven_2Contact"};  
-  //   // std::vector<std::string> ScenarioVecOption = {"flat_2Contact", "uneven_1Contact", "uneven_2Contact"};  
-  //   ScenarioVec = ScenarioVecOption;
-  // }
+  std::vector<std::string> ScenarioVec;
+  bool SpecifiedFlag = false;
+  int FileIndex = 0;
+  if(argc>1){
+    if(argc<3){
+      std:cerr<<"Two Inputs Are Needed But Only One Input Is Given!"<<endl;
+      return -1;
+    }
+    string ScenarioName(argv[1]);
+    ScenarioVec.push_back(ScenarioName);
+    FileIndex = atoi(argv[2]);
+    SpecifiedFlag = true;
+  }else{
+    std::printf("Using Regular Test Flow!\n");
+    std::vector<std::string> ScenarioVecOption = { "flat_1Contact", "flat_2Contact", "uneven_1Contact", "uneven_2Contact"};  
+    ScenarioVec = ScenarioVecOption;
+  }
 
-  // /* 3. Setup Parameters for Algorithm */
-  // for (auto Scenario: ScenarioVec){
-  //   const std::string ExperimentFolderPath = "/home/motion/Desktop/Whole-Body-Planning-for-Push-Recovery-Data/" + Scenario + "/";
-  //   RobotWorld worldObj;
-  //   SimGUIBackend BackendObj(&worldObj);
-  //   WorldSimulation& SimObj = BackendObj.sim;
-  //   string XMLFileStrObj =  ExperimentFolderPath + "Envi.xml";
-  //   const char* XMLFileObj = XMLFileStrObj.c_str();    // Here we must give abstract path to the file
-  //   if(!BackendObj.LoadAndInitSim(XMLFileObj)){
-  //     std::cerr<< XMLFileStrObj<<" file does not exist in that path!"<<endl;
-  //     return -1;
-  //   }
-
-  //   const int GridsNo = 251;
-  //   struct stat buffer;   // This is used to check whether "SDFSpecs.bin" exists or not.
-  //   const string SDFPath = ExperimentFolderPath + "SDFs/";
-  //   const string SDFSpecsName = SDFPath + "SDFSpecs.bin";
-  //   if(stat (SDFSpecsName.c_str(), &buffer) == 0)
-  //     NonlinearOptimizerInfo::SDFInfo = SignedDistanceFieldLoader(SDFPath, GridsNo);
-  //   else
-  //     NonlinearOptimizerInfo::SDFInfo = SignedDistanceFieldGene(SDFPath, worldObj, GridsNo);
+  for (auto Scenario: ScenarioVec){
+    std::string FolderName = "Whole-Body-Planning-for-Push-Recovery-Data";
+    std::string ExperimentFolderPath = "/home/motion/Desktop/" + FolderName + "/" + Scenario + "/";
+    RobotWorld worldObj;
+    SimGUIBackend BackendObj(&worldObj);
+    WorldSimulation& SimObj = BackendObj.sim;
+    string XMLFileStrObj =  ExperimentFolderPath + "Envi.xml";
+    const char* XMLFileObj = XMLFileStrObj.c_str();    // Here we must give abstract path to the file
+    if(!BackendObj.LoadAndInitSim(XMLFileObj)){
+      std::cerr<< XMLFileStrObj<<" file does not exist in that path!"<<endl;
+      return -1;
+    }
+  
+    const int GridsNo = 251;
+    struct stat buffer;   // This is used to check whether "SDFSpecs.bin" exists or not.
+    const string SDFPath = ExperimentFolderPath + "SDFs/";
+    const string SDFSpecsName = SDFPath + "SDFSpecs.bin";
+    if(stat (SDFSpecsName.c_str(), &buffer) == 0)
+      SDFInfoObj = SDFInfoLoader(SDFPath, GridsNo);
+    else
+      SDFInfoObj = SDFInfoGene(SDFPath, worldObj, GridsNo);
+  }
 
   //   ReachabilityMap RMObject = ReachabilityMapGenerator(*worldObj.robots[0], NonlinearOptimizerInfo::RobotLinkInfo, TorsoLink);
   //   const int NumberOfTerrains = worldObj.terrains.size();

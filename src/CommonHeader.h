@@ -24,5 +24,8 @@
 std::vector<LinkInfo>           LinkInfoLoader(string ContactLinkFile);
 std::vector<ContactStatusInfo>  ContactStatusInfoLoader(const string & ContactStatusFile);
 std::vector<int>                LinkIndicesLoader(const string & UserFilePath, const string & FileName);
+SDFInfo                         SDFInfoLoader(const string & SDFPath, const int GridsNo);
+SDFInfo                         SDFInfoGene(const string & SDFPath, const RobotWorld& WorldObj, const int& GridsNo);
+
 
 #endif

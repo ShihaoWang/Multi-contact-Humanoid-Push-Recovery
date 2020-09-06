@@ -250,4 +250,129 @@ struct ContactStatusInfo{
   int LinkIndex;
   std::vector<int> LocalContactStatus;
 };
+
+struct PolarPoint {
+  // This struct expresses a SO(3) point using Polar Coordinates with Radius and Direction
+  PolarPoint(){
+    Radius = -1.0;
+    Position.setZero();
+    Direction.setZero();
+  };
+  PolarPoint(double Radius_, const Vector3 & Position_) {
+    // Constructor
+    Radius = Radius_;
+    Position = Position_;
+    Direction = Position;
+    double PositionLength = Position.norm();
+    Direction.x = Direction.x/PositionLength;
+    Direction.y = Direction.y/PositionLength;
+    Direction.z = Direction.z/PositionLength;
+  }
+  double Radius;
+  Vector3 Position;
+  Vector3 Direction;
+};
+
+struct ReachabilityMap {
+  // This struct is used to save the reachability map
+  ReachabilityMap(){
+    RadiusMin = -1.0;
+    RadiusMax = -1.0;
+    LayerSize = -1;
+    RadiusUnit = -1.0;
+    PointSize = -1;
+
+  };
+  ReachabilityMap(double RadiusMin_, double RadiusMax_, int LayerSize_){
+    RadiusMin = RadiusMin_;
+    RadiusMax = RadiusMax_;
+    LayerSize = LayerSize_;
+    RadiusUnit = (RadiusMax - RadiusMin)/(1.0 * LayerSize - 1.0);
+    PointSize = -1;
+  }
+  std::vector<Vector3> ReachablePointsFinder(const Robot & SimRobot, int SwingLinkInfoIndex, const SDFInfo & SDFInfoObj) const{
+    const double DisTol = 0.01;        // 1cm as a signed distance tolerance.
+
+    double Radius           = EndEffectorChainRadius[SwingLinkInfoIndex];
+    double PivotalLinkIndex = EndEffectorPivotalIndex[SwingLinkInfoIndex];
+    Vector3 RefPoint;
+    SimRobot.GetWorldPosition(Vector3(0.0, 0.0, 0.0), PivotalLinkIndex, RefPoint);
+    
+    std::vector<Vector3> ReachablePoints;
+    ReachablePoints.reserve(PointSize);
+    int LayerIndex = 0;
+    double LayerRadius = RadiusMin;
+    if(Radius>RadiusMax){
+      LayerIndex = LayerSize-1;
+    } else{
+      while (LayerRadius<Radius){
+        LayerRadius+=RadiusUnit;
+        LayerIndex++;
+      }
+      LayerRadius-=RadiusUnit;
+    }
+
+    for (int i = 0; i < LayerIndex; i++){
+      std::vector<PolarPoint> PolarPointLayer = PolarPointLayers.find(i)->second;
+      for (int j = 0; j < PolarPointLayer.size(); j++){
+        Vector3 PolarPointPos = PolarPointLayer[j].Position + RefPoint;
+        double CurrentDist = SDFInfoObj.SignedDistance(PolarPointPos);
+          if((CurrentDist>0.0)&&(CurrentDist<DisTol)){
+          ReachablePoints.push_back(PolarPointPos);
+        }
+      }
+    }
+    return ReachablePoints;
+  }
+
+  std::vector<Vector3> ContactFreePointsFinder(double radius, const std::vector<Vector3> & ReachablePoints,
+                                                              const std::vector<std::pair<Vector3, double>> & ContactFreeInfo) const{
+    // This function can only be called after ReachablePointsFinder() to reduce the extra point further.
+    std::vector<Vector3> ContactFreePoints;
+    ContactFreePoints.reserve(ReachablePoints.size());
+    int ContactFreeNo = 0;
+    for (int i = 0; i < ReachablePoints.size(); i++){
+      Vector3 ReachablePoint = ReachablePoints[i];
+      bool ContactFreeFlag = true;
+      int ContactFreeInfoIndex = 0;
+      while (ContactFreeInfoIndex<ContactFreeInfo.size()){
+        Vector3 RefPoint = ContactFreeInfo[ContactFreeInfoIndex].first;
+        double Radius = ContactFreeInfo[ContactFreeInfoIndex].second;
+        Vector3 PosDiff = ReachablePoint - RefPoint;
+        double PosDiffDis = PosDiff.norm();
+        if(PosDiffDis<=(Radius + radius)){
+          ContactFreeFlag = false;
+          break;
+        }
+        ContactFreeInfoIndex++;
+      }
+      if(ContactFreeFlag){
+        ContactFreePoints.push_back(ReachablePoints[i]);
+        ContactFreeNo++;
+      }
+    }
+    return ContactFreePoints;
+  };
+
+  std::map<int, std::vector<PolarPoint>> PolarPointLayers;
+
+  std::vector<double> EndEffectorChainRadius;                     // Radius from end effector to pivital joint
+  std::vector<double> EndEffectorGeometryRadius;                  // End effector's geometrical radius
+  std::vector<int>    EndEffectorLinkIndex;                       // End effector link index
+  std::vector<int>    EndEffectorPivotalIndex;
+
+  std::map<int, std::vector<int>> EndEffectorChainIndices;        // This map saves intermediate joint from End Effector Joint to Pivotal Joint.
+  std::map<int, int>  EndEffectorIndexCheck;
+
+  std::vector<int>    Link34ToPivotal;
+  std::vector<int>    Link27ToPivotal;  
+
+  double  RadiusMin;
+  double  RadiusMax ;
+  int     LayerSize;
+  double  RadiusUnit;
+
+  int     PointSize;
+};
+
 #endif

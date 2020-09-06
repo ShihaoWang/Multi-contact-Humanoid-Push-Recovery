@@ -242,3 +242,117 @@ SDFInfo SDFInfoLoader(const string & SDFPath, const int GridsNo){
   SDFInfo SDFInfoObj(SDFTensor, SDFSpecs);
   return SDFInfoObj;
 }
+
+
+static std::vector<PolarPoint> PolarPointLayerGene(double r, int n){
+  std::vector<PolarPoint> PolarPointLayer;
+  PolarPointLayer.reserve(n);
+  double phi = M_PI * (3.0 - sqrt(5.0));      // golden angle in radians
+  const double gr=(sqrt(5.0) + 1.0) / 2.0;    // golden ratio = 1.6180339887498948482
+  const double ga=(2.0 - gr) * (2.0*M_PI);    // golden angle = 2.39996322972865332
+  for (int i = 1; i <= n; i++) {
+    const double lat = asin(-1.0 + 2.0 * double(i) / (n+1));
+    const double lon = ga * i;
+
+    const double x = cos(lon)*cos(lat);
+    const double y = sin(lon)*cos(lat);
+    const double z = sin(lat);
+
+    double PointNorm = std::sqrt(x * x + y * y + z * z);
+    double Ratio = PointNorm/r;
+    Vector3 PolarPointPos(x/Ratio, y/Ratio, z/Ratio);
+    PolarPoint PolarPoint_i(r, PolarPointPos);
+    PolarPointLayer.push_back(PolarPoint_i);
+  }
+  return PolarPointLayer;
+}
+
+// Here this function is used to generate a sufficiently dense reachability map for end effector(s)
+ReachabilityMap ReachabilityMapGenerator(const Robot & SimRobotObj, const std::vector<LinkInfo> & LinkInfoObj, const std::vector<int> & TorsoLinkIndices){
+  Robot SimRobot = SimRobotObj;
+  double  RadiusMax = 0.95;
+  int     LayerSize = 61;
+  double  RadiusUnit = RadiusMax/(LayerSize * 1.0);
+  double  RadiusMin = RadiusUnit;
+  
+  ReachabilityMap ReachabilityMapObj(RadiusMin, RadiusMax, LayerSize);
+
+  std::map<int, std::vector<PolarPoint>> PolarPointLayers;
+  int PointSize = 0;
+  for (int i = 0; i < LayerSize; i++){
+    double Radius = (1.0 * i + 1.0) * RadiusUnit;
+    int LayerPointLimit = (i + 1) * (i + 1);
+    std::vector<PolarPoint> PolarPointLayer = PolarPointLayerGene(Radius, LayerPointLimit);
+    PointSize+=PolarPointLayer.size();
+    PolarPointLayers[i] = PolarPointLayer;
+  }
+  ReachabilityMapObj.PolarPointLayers = PolarPointLayers;
+
+  // The next step is to estimate the end effector radius.
+  int DOF = SimRobot.q.size();
+  std::vector<double> DefaultConfig(DOF);
+  for (int i = 0; i < DOF; i++)
+    DefaultConfig[i] = 0.0;
+  
+  // These two values are modified to ensure the arms are straight.
+  DefaultConfig[23] = SimRobot.qMin[23];
+  DefaultConfig[30] = SimRobot.qMax[30];
+  SimRobot.UpdateConfig(Config(DefaultConfig));
+  SimRobot.UpdateGeometry();
+
+  const int RobotLinkInfoSize = LinkInfoObj.size();
+
+  std::vector<double> EndEffectorChainRadius(RobotLinkInfoSize);
+  std::vector<double> EndEffectorGeometryRadius(RobotLinkInfoSize);
+  std::vector<int>    EndEffectorLinkIndex(RobotLinkInfoSize);
+  std::vector<int>    EndEffectorPivotalIndex(RobotLinkInfoSize);
+
+  std::map<int, std::vector<int>> EndEffectorChainIndices;
+  std::map<int, int> EndEffectorIndexCheck;
+
+  for (int i = 0; i < RobotLinkInfoSize; i++){
+    int ParentIndex = -1;
+    int CurrentIndex = LinkInfoObj[i].LinkIndex;
+    EndEffectorIndexCheck[CurrentIndex] = 1;
+    EndEffectorLinkIndex[i] = LinkInfoObj[i].LinkIndex;
+    std::vector<int> EndEffectorLink2PivotalIndex;
+    EndEffectorLink2PivotalIndex.push_back(CurrentIndex);
+    while(std::find(TorsoLinkIndices.begin(), TorsoLinkIndices.end(), ParentIndex)==TorsoLinkIndices.end()) {
+      ParentIndex = SimRobot.parents[CurrentIndex];
+      CurrentIndex = ParentIndex;
+      EndEffectorLink2PivotalIndex.push_back(CurrentIndex);
+    }
+    EndEffectorLink2PivotalIndex.pop_back();
+    Vector3 PivotalPos, EndPos, PivotalRef(0.0, 0.0, 0.0);
+    SimRobot.GetWorldPosition(PivotalRef, EndEffectorLink2PivotalIndex[EndEffectorLink2PivotalIndex.size()-1], PivotalPos);
+    SimRobot.GetWorldPosition(LinkInfoObj[i].AvgLocalContact, LinkInfoObj[i].LinkIndex, EndPos);
+    EndEffectorPivotalIndex[i] = EndEffectorLink2PivotalIndex[EndEffectorLink2PivotalIndex.size()-1];
+    EndEffectorChainIndices[i] = EndEffectorLink2PivotalIndex;
+
+    std::vector<double> CollisionRadius(LinkInfoObj[i].LocalContacts.size());
+    for (int j = 0; j < LinkInfoObj[i].LocalContacts.size(); j++){
+      Vector3 Center2Edge = LinkInfoObj[i].LocalContacts[j] - LinkInfoObj[i].AvgLocalContact;
+      CollisionRadius[j] = Center2Edge.norm();
+    }
+    EndEffectorGeometryRadius[i] = *std::max_element(CollisionRadius.begin(), CollisionRadius.end());
+    Vector3 Pivotal2End = PivotalPos - EndPos;
+    double Pivotal2EndRadius = Pivotal2End.norm();
+    EndEffectorChainRadius[i] = Pivotal2EndRadius;
+  }
+  
+  ReachabilityMapObj.EndEffectorChainRadius = EndEffectorChainRadius;
+  ReachabilityMapObj.EndEffectorGeometryRadius = EndEffectorGeometryRadius;
+  ReachabilityMapObj.EndEffectorLinkIndex = EndEffectorLinkIndex;
+  ReachabilityMapObj.EndEffectorPivotalIndex = EndEffectorPivotalIndex;
+
+  ReachabilityMapObj.EndEffectorChainIndices = EndEffectorChainIndices;
+  ReachabilityMapObj.EndEffectorIndexCheck = EndEffectorIndexCheck;
+
+  std::vector<int> Link34ToPivotal{34, 33, 32, 31, 30, 29};
+  std::vector<int> Link27ToPivotal{27, 26, 25, 24 ,23 ,22};
+  ReachabilityMapObj.Link34ToPivotal = Link34ToPivotal;
+  ReachabilityMapObj.Link27ToPivotal = Link27ToPivotal;
+
+  ReachabilityMapObj.PointSize = PointSize;
+  return ReachabilityMapObj;
+}

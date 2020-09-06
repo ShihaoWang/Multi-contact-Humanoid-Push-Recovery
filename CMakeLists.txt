@@ -63,7 +63,9 @@ set(CILANTRO_LIBRARIES cilantro.so pangolin.so)
 add_executable(MyApp
                src/Main.cpp
 	       src/Loader.cpp
-	       src/RobotInfo.h)
+	       src/RobotInfo.h
+	       src/CommonHeader.h
+	       src/RobotUtils.cpp)
 
 
 target_link_libraries(MyApp  ${KLAMPT_LIBRARIES} ${SNOPT_LIBRARIES} ${GUROBI_LIBRARIES} ${CILANTRO_LIBRARIES} ${GLEW_LIBRARY})

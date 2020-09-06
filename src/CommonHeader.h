@@ -26,6 +26,11 @@ std::vector<ContactStatusInfo>  ContactStatusInfoLoader(const string & ContactSt
 std::vector<int>                LinkIndicesLoader(const string & UserFilePath, const string & FileName);
 SDFInfo                         SDFInfoLoader(const string & SDFPath, const int GridsNo);
 SDFInfo                         SDFInfoGene(const string & SDFPath, const RobotWorld& WorldObj, const int& GridsNo);
+ReachabilityMap                 ReachabilityMapGenerator(const Robot& SimRobot, const std::vector<LinkInfo> & LinkInfoObj, const std::vector<int> & TorsoLinkIndices);
 
+
+/* 1. Robot Utilities */
+
+int                             FileIndexFinder(bool UpdateFlag, int WriteInt);
 
 #endif

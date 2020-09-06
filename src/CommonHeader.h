@@ -28,6 +28,7 @@ SDFInfo                         SDFInfoObjInit(const string & ExperimentFolderPa
 ReachabilityMap                 ReachabilityMapInit(const Robot& SimRobot, const std::vector<LinkInfo> & LinkInfoObj, const std::vector<int> & TorsoLinkIndices);
 AnyCollisionGeometry3D          TerrColGeomObjInit(const RobotWorld & worldObj);
 std::vector<double>             getSimParaVec();
+std::vector<double>             RobotConfigLoader(const string & user_path, const string & file_name);
 
 /* 1. Main MainDriver */
 void                            MainDriver(const bool & SpecifiedFlag, const string & ExperimentFolderPath, int & FileIndex, const SelfCollisionInfo & SelfCollisionInfoObj);
@@ -35,7 +36,26 @@ void                            MainInner(string ExperimentFolderPath, int FileI
 
 /* 2. Robot Utilities */
 int                             FileIndexFinder(bool UpdateFlag, int WriteInt);
+void                            PathFileManager(const string & CurrentCasePath);
+void                            Vector3Appender(const char *File_Name, double Time_t, const Vector3 & Vector3Obj);
+void                            StateTrajAppender(const char *stateTrajFile_Name, const double & Time_t, const std::vector<double> & Configuration);
+void                            getCentroidalState(const Robot & SimRobot, Vector3 & COMPos, Vector3 & COMVel);
+void                            PushInfoFileAppender(double SimTime, double Fx_t, double Fy_t, double Fz_t, const string & SpecificPath);
+std::vector<Vector3>            ActiveContactFinder(const Robot & SimRobot, const std::vector<ContactStatusInfo> & RobotContactInfo);
+void                            ContactPolytopeWriter(const std::vector<Vector3> & ActiveContact, const std::vector<PIPInfo> & PIPTotal, const SimPara & SimParaObj);
+bool                            FailureChecker(const Robot & SimRobot);
+bool                            PenetrationTester(const Robot & SimRobotObj, int SwingLinkInfoIndex);
+double                          FailureMetricEval(const std::vector<PIPInfo> & PIPTotal);
+void                            StateLogger(WorldSimulation & Sim, LinearPath & CtrlStateTraj, LinearPath & PlanStateTraj, std::vector<double> & qDes, const SimPara & SimParaObj);
 
-/*  */
 
+/* 3. Simulation */
+int SimulationWithMethod(WorldSimulation & Sim, const std::vector<ContactStatusInfo> & InitContactInfo, SelfCollisionInfo & SelfCollisionInfoObj, SimPara & SimParaObj);
+
+/* 4. Simulation Related */
+LinearPath                      InitialSimulation(WorldSimulation & Sim, const SimPara & SimParaObj);
+void                            PushImposer(WorldSimulation & Sim, double CurTime, const SimPara & SimParaObj, bool FailureFlag);
+
+/* Convex Polytope */
+std::vector<PIPInfo>            PIPGenerator( const Vector3 & COMPos, const Vector3 & COMVel, const std::vector<Vector3> & ContactPoints);
 #endif

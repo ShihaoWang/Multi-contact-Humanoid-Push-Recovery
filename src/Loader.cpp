@@ -384,3 +384,43 @@ AnyCollisionGeometry3D TerrColGeomObjInit(const RobotWorld & worldObj ){
     AnyCollisionGeometry3D TerrColGeom(EnviTriMesh);
     return TerrColGeom;
 }
+
+std::vector<double> RobotConfigLoader(const string & user_path, const string & file_name){
+  string str_line, str_keyword;
+  str_keyword = "\t";
+  int flag = 0;
+
+  string config_file_path = user_path + file_name;
+  ifstream ConfigInfofile (config_file_path);
+
+  std::vector<double> RobotConfig;
+  if (ConfigInfofile.is_open()){
+    while (getline (ConfigInfofile,str_line)){
+      size_t start_pos = str_line.find(str_keyword);        // Here gives out the position of the \t
+      if (start_pos != string::npos){
+        string DOF_str ="";
+        for (size_t j = 0; j < start_pos; j++)
+          DOF_str+= str_line[j];
+        
+        const int DOF = stoi(DOF_str);
+        RobotConfig.reserve(DOF);
+        str_line.erase(0,start_pos+1);
+
+        std::istringstream ss(str_line);
+        string Config_i;
+        while (ss >> Config_i){
+          RobotConfig.push_back(std::stod(Config_i));
+        }
+      } else {
+        std::cerr<<"Wrong! .config file cannot be found!"<<endl;
+        return RobotConfig;
+      }
+    }
+    ConfigInfofile.close();
+    flag = 1;
+  } else {
+    cerr << "Unable to open file";
+    return RobotConfig;
+  } 
+  return RobotConfig;
+}

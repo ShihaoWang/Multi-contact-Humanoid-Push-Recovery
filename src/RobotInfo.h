@@ -390,6 +390,8 @@ struct SimPara{
 
     ImpulseForceValue = -1.0;
     ImpulseForceDirection.setZero();
+
+    FailureTime = -1.0;
   };
   SimPara(const std::vector<double> & SimParaVec) {
     assert (SimParaVec.size() == 8);
@@ -404,59 +406,56 @@ struct SimPara{
     PhaseRatio = SimParaVec[6];             // This ratio determines the boundary between acceleration and deceleration.
     ReductionRatio = SimParaVec[7];
   }
-  // void CurrentCasePathUpdate(const string _CurrentCasePath){
-  //   CurrentCasePath = _CurrentCasePath;
+  void CurrentCasePathUpdate(const string & CurrentCasePath_){
+    CurrentCasePath = CurrentCasePath_;
 
-  //   string fedge_aFile = CurrentCasePath + "EdgeATraj.txt";
-  //   // const char *fedge_aFile_Name = fedge_aFile.c_str();
-  //   string fedge_bFile = CurrentCasePath + "EdgeBTraj.txt";
-  //   // const char *fedge_bFile_Name = fedge_bFile.c_str();
-  //   string fEdgeCOMFile = CurrentCasePath + "EdgeCOMTraj.txt";
-  //   // const char *fEdgeCOMFile_Name = fEdgeCOMFile.c_str();
-  //   string fEdgexTrajFile = CurrentCasePath + "EdgexTraj.txt";
-  //   // const char *fEdgexTrajFile_Name = fEdgexTrajFile.c_str();
-  //   string fEdgeyTrajFile = CurrentCasePath + "EdgeyTraj.txt";
-  //   // const char *fEdgeyTrajFile_Name = fEdgeyTrajFile.c_str();
-  //   string fEdgezTrajFile = CurrentCasePath + "EdgezTraj.txt";
-  //   // const char *fEdgezTrajFile_Name = fEdgezTrajFile.c_str();
-  //   string fVertexTrajFile = CurrentCasePath + "EdgeVertexTraj.txt";
+    string fedge_aFile = CurrentCasePath + "EdgeATraj.txt";
+    // const char *fedge_aFile_Name = fedge_aFile.c_str();
+    string fedge_bFile = CurrentCasePath + "EdgeBTraj.txt";
+    // const char *fedge_bFile_Name = fedge_bFile.c_str();
+    string fEdgeCOMFile = CurrentCasePath + "EdgeCOMTraj.txt";
+    // const char *fEdgeCOMFile_Name = fEdgeCOMFile.c_str();
+    string fEdgexTrajFile = CurrentCasePath + "EdgexTraj.txt";
+    // const char *fEdgexTrajFile_Name = fEdgexTrajFile.c_str();
+    string fEdgeyTrajFile = CurrentCasePath + "EdgeyTraj.txt";
+    // const char *fEdgeyTrajFile_Name = fEdgeyTrajFile.c_str();
+    string fEdgezTrajFile = CurrentCasePath + "EdgezTraj.txt";
+    // const char *fEdgezTrajFile_Name = fEdgezTrajFile.c_str();
+    string fVertexTrajFile = CurrentCasePath + "EdgeVertexTraj.txt";
 
-  //   EdgeFileNames.clear();
+    EdgeFileNames.clear();
 
-  //   EdgeFileNames.push_back(fedge_aFile);
-  //   EdgeFileNames.push_back(fedge_bFile);
-  //   EdgeFileNames.push_back(fEdgeCOMFile);
-  //   EdgeFileNames.push_back(fEdgexTrajFile);
-  //   EdgeFileNames.push_back(fEdgeyTrajFile);
-  //   EdgeFileNames.push_back(fEdgezTrajFile);
-  //   EdgeFileNames.push_back(fVertexTrajFile);
+    EdgeFileNames.push_back(fedge_aFile);
+    EdgeFileNames.push_back(fedge_bFile);
+    EdgeFileNames.push_back(fEdgeCOMFile);
+    EdgeFileNames.push_back(fEdgexTrajFile);
+    EdgeFileNames.push_back(fEdgeyTrajFile);
+    EdgeFileNames.push_back(fEdgezTrajFile);
+    EdgeFileNames.push_back(fVertexTrajFile);
 
-  //   FailureStateTrajStr =  CurrentCasePath + "FailureStateTraj.path";
-  //   // const char *FailureStateTrajStr_Name = FailureStateTrajStr.c_str();
-  //   CtrlStateTrajStr    =  CurrentCasePath + "CtrlStateTraj.path";
-  //   // const char *CtrlStateTrajStr_Name = CtrlStateTrajStr.c_str();
-  //   PlanStateTrajStr = CurrentCasePath + "PlanStateTraj.path";
-  //   // const char *PlanStateTrajStr_Name = PlanStateTrajStr.c_str();
+    FailureStateTrajStr =  CurrentCasePath + "FailureStateTraj.path";
+    // const char *FailureStateTrajStr_Name = FailureStateTrajStr.c_str();
+    CtrlStateTrajStr    =  CurrentCasePath + "CtrlStateTraj.path";
+    // const char *CtrlStateTrajStr_Name = CtrlStateTrajStr.c_str();
+    PlanStateTrajStr = CurrentCasePath + "PlanStateTraj.path";
+    // const char *PlanStateTrajStr_Name = PlanStateTrajStr.c_str();
+
+    CtrlPosTrajStr = CurrentCasePath + "CtrlPosTraj.txt";
+    FailurePosTrajStr = CurrentCasePath + "FailurePosTraj.txt";
     
-  //   CtrlCFTrajStr = CurrentCasePath + "CtrlCFTraj.txt";
-  //   FailureCFTrajStr = CurrentCasePath + "FailureCFTraj.txt";
+    CtrlVelTrajStr = CurrentCasePath + "CtrlVelTraj.txt";
+    FailureVelTrajStr = CurrentCasePath + "FailureVelTraj.txt";
+  }
 
-  //   CtrlVelTrajStr = CurrentCasePath + "CtrlVelTraj.txt";
-  //   FailureVelTrajStr = CurrentCasePath + "FailureVelTraj.txt";
-
-  //   CtrlKETrajStr = CurrentCasePath + "CtrlKETraj.txt";
-  //   FailureKETrajStr = CurrentCasePath + "FailureKETraj.txt";
-  // }
-  void setImpulseForce(double ImpulseForceValue_, Vector3 ImpulseForceDirection_){ ImpulseForceValue = ImpulseForceValue_; ImpulseForceDirection = ImpulseForceDirection_;}
-  void getImpulseForce(double & ImpulseForceValue_, Vector3 & ImpulseForceDirection_ ) const { ImpulseForceValue_ = ImpulseForceValue;  ImpulseForceDirection_ = ImpulseForceDirection; }
-  // string getCurrentCasePath() const{ return CurrentCasePath; }
-  // void setImpulseForceMax(const Vector3 & ImpulseDirection){ ImpulseForceMax = ForceMax * ImpulseDirection; }
-  // void setPlanStageIndex(const int & _PlanStageIndex) {PlanStageIndex = _PlanStageIndex; }
-  // int  getPlanStageIndex() const{ return PlanStageIndex; }
+  void    setImpulseForce(double ImpulseForceValue_, Vector3 ImpulseForceDirection_){ ImpulseForceValue = ImpulseForceValue_; ImpulseForceDirection = ImpulseForceDirection_;}
+  void    getImpulseForce(double & ImpulseForceValue_, Vector3 & ImpulseForceDirection_ ) const { ImpulseForceValue_ = ImpulseForceValue;  ImpulseForceDirection_ = ImpulseForceDirection; }
+  string  getCurrentCasePath() const{ return CurrentCasePath; }
+  void setPlanStageIndex(const int & _PlanStageIndex) {PlanStageIndex = _PlanStageIndex; }
+  int  getPlanStageIndex() const{ return PlanStageIndex; }
+  void setSimTime(const double & _SimTime) { SimTime = _SimTime; }
+  double getSimTime() const{ return SimTime; }
   // void setPlanEndEffectorIndex( const int & _PlanEndEffectorIndex) { PlanEndEffectorIndex = _PlanEndEffectorIndex; }
   // int  getPlanEndEffectorIndex() const{ return PlanEndEffectorIndex; }
-  // void setSimTime(const double & _SimTime) { SimTime = _SimTime; }
-  // double getSimTime() const{ return SimTime; }
   // void setContactInit(const Vector3 _ContactInit){ ContactInit = _ContactInit; }
   // Vector3 getContactInit() const{ return ContactInit; }
   // void setContactGoal(const Vector3 _ContactGoal){ ContactGoal = _ContactGoal;}
@@ -488,22 +487,23 @@ struct SimPara{
   double  ImpulseForceValue;
   Vector3 ImpulseForceDirection;
 
-  // int     PlanStageIndex;
+  string  CurrentCasePath;
+  std::vector<string> EdgeFileNames;
+  string  FailureStateTrajStr, CtrlStateTrajStr, PlanStateTrajStr;
+  string  CtrlPosTrajStr, FailurePosTrajStr;
+  string  CtrlVelTrajStr, FailureVelTrajStr;
+
+  double  FailureTime;
+  int     PlanStageIndex;
+  double  SimTime;
+
   // int     PlanEndEffectorIndex;    // This PlanEndEffectorIndex saves successful end effector for push recovery.
-  // double  SimTime;
-  // double  FailureTime;
   // bool    TransPathFeasiFlag;
   // int     SwingLinkInfoIndex;
   // Vector3 CurrentContactPos;
   // bool    TrajConfigOptFlag;
 
   // DataRecorderInfo DataRecorderObj;
-  // std::string CurrentCasePath;
-  // std::vector<string> EdgeFileNames;
-  // string CtrlCFTrajStr, FailureCFTrajStr;
-  // string CtrlKETrajStr, FailureKETrajStr;
-  // string CtrlVelTrajStr, FailureVelTrajStr;
-  // string FailureStateTrajStr, CtrlStateTrajStr, PlanStateTrajStr;
   // Vector3 ContactInit, ContactGoal;
   // Vector3 DirectionInit, DirectionGoal;
   // Vector3 EndEffectorInitxDir, EndEffectorInityDir;   // For alignment purpose
@@ -618,6 +618,195 @@ struct SelfCollisionInfo{
   std::vector<AABB3D> BoundingBoxes;
   std::vector<RigidTransform> Transforms;
   std::map<int, std::vector<int>> SelfCollisionLinkMap;       // This map saves intermediate joint from End Effector Joint to Pivotal Joint.
+};
+
+struct ControlReferenceInfo{
+    ControlReferenceInfo(){
+    ReadyFlag = false;
+    TouchDownFlag = false;
+    OneHandAlreadyFlag = false;
+    ControlReferenceType = -1;
+    SwingLinkInfoIndex = -1;           // Used for RobotLinkInfo
+    ContactStatusInfoIndex = -1;
+    GoalContactPos.setZero();
+    GoalContactGrad.setZero();
+    FailureMetric = 0.0;
+    }
+  void setFailueMetric(const double & _FailureMetric){ FailureMetric = _FailureMetric; }
+  double getFailueMetric() const{ return FailureMetric; }
+  void setSwingLinkInfoIndex(const int & _SwingLinkInfoIndex) {SwingLinkInfoIndex = _SwingLinkInfoIndex;}
+  int  getSwingLinkInfoIndex() const{ return SwingLinkInfoIndex; }
+  bool getReadyFlag() const{ return ReadyFlag;}
+  void setReadyFlag(const bool & _ReadyFlag ){ ReadyFlag = _ReadyFlag; }
+  void setTouchDownFlag(const bool & _TouchDownFlag){ TouchDownFlag=_TouchDownFlag; }
+  bool getTouchDownFlag(){ return TouchDownFlag; }
+  void setOneHandAlreadyFlag(bool Value) {OneHandAlreadyFlag = Value;}
+  bool getOneHandAlreadyFlag() const { return OneHandAlreadyFlag; };
+  int  getControlReferenceType() const{ return ControlReferenceType; }
+  void setControlReferenceType(const int &_ControlReferenceType) { ControlReferenceType = _ControlReferenceType; }
+  void setGoalContactPosNGrad(const Vector3 & _GoalContactPos, const Vector3 & _GoalContactGrad){
+    GoalContactPos = _GoalContactPos;
+    GoalContactGrad = _GoalContactGrad;
+  }
+  Vector3 getGoalContactPos() const{ return GoalContactPos; }
+  Vector3 getGoalContactGrad() const{ return GoalContactGrad;}
+
+  void SetInitContactStatus(const std::vector<ContactStatusInfo> &_InitContactStatus){ InitContactStatus = _InitContactStatus; }
+  std::vector<ContactStatusInfo> getInitContactStatus() const { return InitContactStatus;}
+
+  void SetGoalContactStatus(const std::vector<ContactStatusInfo> & _GoalContactStatus) { GoalContactStatus = _GoalContactStatus;}
+  std::vector<ContactStatusInfo> getGoalContactStatus() const { return GoalContactStatus;}
+
+  void TrajectoryUpdate(const std::vector<double> & timeTraj, const std::vector<Config> & configTraj, const std::vector<Config> & velocityTraj, const std::vector<Vector3> & endeffectorTraj){
+    TimeTraj = timeTraj;
+    ConfigTraj = configTraj;
+    PlannedConfigTraj = LinearPath(timeTraj, configTraj);
+    PlannedVelocityTraj = LinearPath(timeTraj, velocityTraj);
+    std::vector<Vector> endeffectorPath;
+    for (Vector3 EndEffectorPos: endeffectorTraj){
+      Vector EndEffectorPosVec;
+      EndEffectorPosVec.resize(3);
+      EndEffectorPosVec[0] = EndEffectorPos[0];
+      EndEffectorPosVec[1] = EndEffectorPos[1];
+      EndEffectorPosVec[2] = EndEffectorPos[2];
+      endeffectorPath.push_back(EndEffectorPosVec);
+    }
+    EndEffectorTraj = LinearPath(timeTraj, endeffectorPath);
+  }
+
+  void setWaitTime(const double & _WaitTime) { WaitTime = _WaitTime; }
+  double getWaitTime() const { return WaitTime; }
+  void setTouchDownConfig(const std::vector<double> _TouchDownConfig){ TouchDownConfig = _TouchDownConfig; }
+  std::vector<double> getTouchDownConfig() const { return TouchDownConfig;}
+
+  bool    ReadyFlag;
+  bool    TouchDownFlag;
+  bool    OneHandAlreadyFlag;   
+  int     ControlReferenceType;
+  int     SwingLinkInfoIndex;
+  int     ContactStatusInfoIndex;
+  double  WaitTime;
+  double  FailureMetric;
+
+  Vector3 GoalContactPos;
+  Vector3 GoalContactGrad;
+
+  std::vector<double> TouchDownConfig;
+
+  LinearPath PlannedConfigTraj;
+  LinearPath PlannedVelocityTraj;
+  LinearPath EndEffectorTraj;
+
+  std::vector<QuaternionRotation> OrientationQuat;
+  
+  std::vector<double> TimeTraj;
+  std::vector<Config> ConfigTraj;
+
+  std::vector<ContactStatusInfo> InitContactStatus;
+  std::vector<ContactStatusInfo> GoalContactStatus;
+};
+
+struct FacetInfo{
+  FacetInfo(){
+    FacetValidFlag = false;
+  };
+  void setFacetValidFlag(const bool & _FacetValidFlag){FacetValidFlag = _FacetValidFlag;}
+  bool getFacetValidFlag(){ return FacetValidFlag;}
+  void setFacetEdges(const std::vector<std::pair<Vector3, Vector3>> & _FacetEdges) { FacetEdges = _FacetEdges; }
+  void setFacetNorm(const Vector3& _FacetNorm){ FacetNorm = _FacetNorm;}
+  double ProjPoint2EdgeDist(const Vector3& _Point){
+    std::vector<double> ProjPoint2Edge_vec(EdgeNorms.size());
+    Vector3 Vertex2Point = _Point - FacetEdges[0].first;
+    double Point2Facet = Vertex2Point.dot(FacetNorm);
+    Vector3 Facet2Point = Point2Facet * FacetNorm;
+    for (int i = 0; i < EdgeNorms.size(); i++){
+      Vertex2Point = _Point - FacetEdges[i].first;
+      Vector3 Vertex2ProjPoint = Vertex2Point - Facet2Point;
+      double ProjPoint2Edge_i = Vertex2ProjPoint.dot(EdgeNorms[i]);
+      ProjPoint2Edge_vec[i] = ProjPoint2Edge_i;
+    }
+    return *min_element(ProjPoint2Edge_vec.begin(), ProjPoint2Edge_vec.end());
+  }
+  std::vector<double> ProjPoint2EdgeDistVec(const Vector3& _Point){
+    std::vector<double> ProjPoint2Edge_vec(EdgeNorms.size());
+    Vector3 Vertex2Point = _Point - FacetEdges[0].first;
+    double Point2Facet = Vertex2Point.dot(FacetNorm);
+    Vector3 Facet2Point = Point2Facet * FacetNorm;
+    for (int i = 0; i < EdgeNorms.size(); i++){
+      Vertex2Point = _Point - FacetEdges[i].first;
+      Vector3 Vertex2ProjPoint = Vertex2Point - Facet2Point;
+      double ProjPoint2Edge_i = Vertex2ProjPoint.dot(EdgeNorms[i]);
+      ProjPoint2Edge_vec[i] = ProjPoint2Edge_i;
+    }
+    return ProjPoint2Edge_vec;
+  }
+  void EdgesUpdate(){
+    Edges.reserve(EdgeNorms.size());
+    EdgesDirection.reserve(EdgeNorms.size());
+    for (int i = 0; i < EdgeNorms.size(); i++){
+      Vector3 Edge_i = FacetEdges[i].second - FacetEdges[i].first;
+      Edges.push_back(Edge_i);
+      Vector3 Edge_i_normalized;
+      Edge_i.getNormalized(Edge_i_normalized);
+      EdgesDirection.push_back(Edge_i_normalized);
+    }
+  }
+  std::vector<std::pair<Vector3, Vector3>> FacetEdges;
+  std::vector<Vector3> EdgeNorms;
+  Vector3 FacetNorm;
+  std::vector<Vector3> Edges;
+  std::vector<Vector3> EdgesDirection;
+  bool FacetValidFlag;
+};
+
+struct PIPInfo{
+  // This struct saves the information of the projected inverted pendulum from the CoM to the edge of convex polytope
+  PIPInfo(){
+    L = 0.25;         // The reference bound range is [0.25, 0.85]
+    Ldot = 0.0;
+    theta = 0.0;
+    thetadot = 0.0;
+    g = 9.81;
+    g_angle = 0.0;
+    speed = -1.0;
+    onFlag = false;
+  }
+  PIPInfo(double _L, double _Ldot, double _theta, double _thetadot, double _g, double _g_angle){
+    L = _L;
+    Ldot = _Ldot;
+    theta = _theta;
+    thetadot = _thetadot;
+    g = _g;
+    g_angle = _g_angle;
+  }
+  void setPrimeUnits(const Vector3 & x_prime_unit_,const Vector3 & y_prime_unit_,const Vector3 & z_prime_unit_){
+    x_prime_unit = x_prime_unit_;
+    y_prime_unit = y_prime_unit_;
+    z_prime_unit = z_prime_unit_;
+  }
+  void setUnits(const Vector3 & x_unit_,const Vector3 & y_unit_,const Vector3 & z_unit_){
+    x_unit = x_unit_;
+    y_unit = y_unit_;
+    z_unit = z_unit_;
+  }
+  void setEdgeAnB(const Vector3 & edge_a_, const Vector3 & edge_b_){
+    edge_a = edge_a_;
+    edge_b = edge_b_;
+  }
+  void setIntersection(const Vector3 & intersection_){ intersection = intersection_;}
+  void setSpeed(const double & _speed ) {speed = _speed;}
+  double getSpeed() const{ return speed;}
+
+  double  L, Ldot, theta, thetadot;
+  double  g, g_angle;
+
+  double  speed;                            // This value indicates the horizontal velocity.
+  bool    onFlag;                           // Whether the origin is at intersection or not?!
+
+  Vector3 x_prime_unit, y_prime_unit, z_prime_unit;
+  Vector3 x_unit, y_unit, z_unit;
+  Vector3 edge_a, edge_b;                     // The Edge points from edge_a to edge_b.
+  Vector3 intersection;                     // The point where the COM intersects the edge.
 };
 
 #endif

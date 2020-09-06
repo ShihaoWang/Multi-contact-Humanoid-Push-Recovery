@@ -68,7 +68,10 @@ add_executable(MyApp
 	       src/SimParaVec.cpp
 	       src/RobotInfo.h
 	       src/CommonHeader.h
-	       src/RobotUtils.cpp)
+	       src/RobotUtils.cpp
+	       src/SimulationRelated.cpp
+	       src/SimulationWithMethod.cpp
+	       src/ConvexPolytope.cpp)
 
 
 target_link_libraries(MyApp  ${KLAMPT_LIBRARIES} ${SNOPT_LIBRARIES} ${GUROBI_LIBRARIES} ${CILANTRO_LIBRARIES} ${GLEW_LIBRARY})

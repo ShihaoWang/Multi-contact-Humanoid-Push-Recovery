@@ -62,7 +62,10 @@ set(CILANTRO_LIBRARIES cilantro.so pangolin.so)
 # Main Code Properties
 add_executable(MyApp
                src/Main.cpp
+	       src/MainDriver.cpp
+	       src/MainInner.cpp
 	       src/Loader.cpp
+	       src/SimParaVec.cpp
 	       src/RobotInfo.h
 	       src/CommonHeader.h
 	       src/RobotUtils.cpp)

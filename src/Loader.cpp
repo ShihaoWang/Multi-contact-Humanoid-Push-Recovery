@@ -113,7 +113,7 @@ std::vector<int> LinkIndicesLoader(const string & UserFilePath, const string & F
   return TorsoLinkVec;
 }
 
-SDFInfo SDFInfoGene(const string & SDFPath, const RobotWorld& WorldObj, const int& GridsNo){
+static SDFInfo SDFInfoGene(const string & SDFPath, const RobotWorld& WorldObj, const int& GridsNo){
   double resolution = 0.025;
   const int NumberOfTerrains = WorldObj.terrains.size();
 
@@ -211,7 +211,7 @@ SDFInfo SDFInfoGene(const string & SDFPath, const RobotWorld& WorldObj, const in
 }
 
 
-SDFInfo SDFInfoLoader(const string & SDFPath, const int GridsNo){
+static SDFInfo SDFInfoLoader(const string & SDFPath, const int GridsNo){
   std::cout<<"Loading "<<SDFPath<<endl;
   // This function will read in the computed SDF_File into a Eigen::Tensor
   const std::string SDF_FileNameStr = SDFPath + "SDFTensor.bin";
@@ -243,6 +243,21 @@ SDFInfo SDFInfoLoader(const string & SDFPath, const int GridsNo){
   return SDFInfoObj;
 }
 
+SDFInfo SDFInfoObjInit(const string & ExperimentFolderPath, const RobotWorld & worldObj){
+  // SDFInfoObj initialization
+  const int GridsNo = 251;
+  struct stat buffer;   // This is used to check whether "SDFSpecs.bin" exists or not.
+  const string SDFPath = ExperimentFolderPath + "SDFs/";
+  const string SDFSpecsName = SDFPath + "SDFSpecs.bin";
+
+  SDFInfo SDFInfoObj;
+  if(stat (SDFSpecsName.c_str(), &buffer) == 0)
+    SDFInfoObj = SDFInfoLoader(SDFPath, GridsNo);
+  else
+    SDFInfoObj = SDFInfoGene(SDFPath, worldObj, GridsNo);
+  return SDFInfoObj;
+}
+
 
 static std::vector<PolarPoint> PolarPointLayerGene(double r, int n){
   std::vector<PolarPoint> PolarPointLayer;
@@ -268,7 +283,7 @@ static std::vector<PolarPoint> PolarPointLayerGene(double r, int n){
 }
 
 // Here this function is used to generate a sufficiently dense reachability map for end effector(s)
-ReachabilityMap ReachabilityMapGenerator(const Robot & SimRobotObj, const std::vector<LinkInfo> & LinkInfoObj, const std::vector<int> & TorsoLinkIndices){
+ReachabilityMap ReachabilityMapInit(const Robot & SimRobotObj, const std::vector<LinkInfo> & LinkInfoObj, const std::vector<int> & TorsoLinkIndices){
   Robot SimRobot = SimRobotObj;
   double  RadiusMax = 0.95;
   int     LayerSize = 61;
@@ -339,7 +354,7 @@ ReachabilityMap ReachabilityMapGenerator(const Robot & SimRobotObj, const std::v
     double Pivotal2EndRadius = Pivotal2End.norm();
     EndEffectorChainRadius[i] = Pivotal2EndRadius;
   }
-  
+
   ReachabilityMapObj.EndEffectorChainRadius = EndEffectorChainRadius;
   ReachabilityMapObj.EndEffectorGeometryRadius = EndEffectorGeometryRadius;
   ReachabilityMapObj.EndEffectorLinkIndex = EndEffectorLinkIndex;
@@ -355,4 +370,17 @@ ReachabilityMap ReachabilityMapGenerator(const Robot & SimRobotObj, const std::v
 
   ReachabilityMapObj.PointSize = PointSize;
   return ReachabilityMapObj;
+}
+
+AnyCollisionGeometry3D TerrColGeomObjInit(const RobotWorld & worldObj ){
+    const int NumberOfTerrains = worldObj.terrains.size();
+    std::shared_ptr<Terrain> Terrain_ptr = std::make_shared<Terrain>(*worldObj.terrains[0]);
+    Meshing::TriMesh EnviTriMesh  = Terrain_ptr->geometry->AsTriangleMesh();  
+    for (int i = 0; i < NumberOfTerrains-1; i++){
+      std::shared_ptr<Terrain> Terrain_ptr = std::make_shared<Terrain>(*worldObj.terrains[i+1]);
+      Meshing::TriMesh EnviTriMesh_i  = Terrain_ptr->geometry->AsTriangleMesh();
+      EnviTriMesh.MergeWith(EnviTriMesh_i);
+    }
+    AnyCollisionGeometry3D TerrColGeom(EnviTriMesh);
+    return TerrColGeom;
 }

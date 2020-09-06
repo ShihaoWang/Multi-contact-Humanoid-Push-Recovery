@@ -375,4 +375,249 @@ struct ReachabilityMap {
   int     PointSize;
 };
 
+struct SimPara{
+  SimPara(){
+    PushDuration = -1.0;
+    DetectionWait = -1.0;
+
+    TimeStep = -1.0;
+    InitDuration = -1.0;
+    TotalDuration = -1.0;
+
+    ForwardDurationSeed = -1.0;
+    PhaseRatio = -1.0;  
+    ReductionRatio = -1.0;
+
+    ImpulseForceValue = -1.0;
+    ImpulseForceDirection.setZero();
+  };
+  SimPara(const std::vector<double> & SimParaVec) {
+    assert (SimParaVec.size() == 8);
+    PushDuration = SimParaVec[0];
+    DetectionWait = SimParaVec[1];
+
+    TimeStep = SimParaVec[2];
+    InitDuration = SimParaVec[3];
+    TotalDuration = SimParaVec[4];
+
+    ForwardDurationSeed = SimParaVec[5];
+    PhaseRatio = SimParaVec[6];             // This ratio determines the boundary between acceleration and deceleration.
+    ReductionRatio = SimParaVec[7];
+  }
+  // void CurrentCasePathUpdate(const string _CurrentCasePath){
+  //   CurrentCasePath = _CurrentCasePath;
+
+  //   string fedge_aFile = CurrentCasePath + "EdgeATraj.txt";
+  //   // const char *fedge_aFile_Name = fedge_aFile.c_str();
+  //   string fedge_bFile = CurrentCasePath + "EdgeBTraj.txt";
+  //   // const char *fedge_bFile_Name = fedge_bFile.c_str();
+  //   string fEdgeCOMFile = CurrentCasePath + "EdgeCOMTraj.txt";
+  //   // const char *fEdgeCOMFile_Name = fEdgeCOMFile.c_str();
+  //   string fEdgexTrajFile = CurrentCasePath + "EdgexTraj.txt";
+  //   // const char *fEdgexTrajFile_Name = fEdgexTrajFile.c_str();
+  //   string fEdgeyTrajFile = CurrentCasePath + "EdgeyTraj.txt";
+  //   // const char *fEdgeyTrajFile_Name = fEdgeyTrajFile.c_str();
+  //   string fEdgezTrajFile = CurrentCasePath + "EdgezTraj.txt";
+  //   // const char *fEdgezTrajFile_Name = fEdgezTrajFile.c_str();
+  //   string fVertexTrajFile = CurrentCasePath + "EdgeVertexTraj.txt";
+
+  //   EdgeFileNames.clear();
+
+  //   EdgeFileNames.push_back(fedge_aFile);
+  //   EdgeFileNames.push_back(fedge_bFile);
+  //   EdgeFileNames.push_back(fEdgeCOMFile);
+  //   EdgeFileNames.push_back(fEdgexTrajFile);
+  //   EdgeFileNames.push_back(fEdgeyTrajFile);
+  //   EdgeFileNames.push_back(fEdgezTrajFile);
+  //   EdgeFileNames.push_back(fVertexTrajFile);
+
+  //   FailureStateTrajStr =  CurrentCasePath + "FailureStateTraj.path";
+  //   // const char *FailureStateTrajStr_Name = FailureStateTrajStr.c_str();
+  //   CtrlStateTrajStr    =  CurrentCasePath + "CtrlStateTraj.path";
+  //   // const char *CtrlStateTrajStr_Name = CtrlStateTrajStr.c_str();
+  //   PlanStateTrajStr = CurrentCasePath + "PlanStateTraj.path";
+  //   // const char *PlanStateTrajStr_Name = PlanStateTrajStr.c_str();
+    
+  //   CtrlCFTrajStr = CurrentCasePath + "CtrlCFTraj.txt";
+  //   FailureCFTrajStr = CurrentCasePath + "FailureCFTraj.txt";
+
+  //   CtrlVelTrajStr = CurrentCasePath + "CtrlVelTraj.txt";
+  //   FailureVelTrajStr = CurrentCasePath + "FailureVelTraj.txt";
+
+  //   CtrlKETrajStr = CurrentCasePath + "CtrlKETraj.txt";
+  //   FailureKETrajStr = CurrentCasePath + "FailureKETraj.txt";
+  // }
+  void setImpulseForce(double ImpulseForceValue_, Vector3 ImpulseForceDirection_){ ImpulseForceValue = ImpulseForceValue_; ImpulseForceDirection = ImpulseForceDirection_;}
+  void getImpulseForce(double & ImpulseForceValue_, Vector3 & ImpulseForceDirection_ ) const { ImpulseForceValue_ = ImpulseForceValue;  ImpulseForceDirection_ = ImpulseForceDirection; }
+  // string getCurrentCasePath() const{ return CurrentCasePath; }
+  // void setImpulseForceMax(const Vector3 & ImpulseDirection){ ImpulseForceMax = ForceMax * ImpulseDirection; }
+  // void setPlanStageIndex(const int & _PlanStageIndex) {PlanStageIndex = _PlanStageIndex; }
+  // int  getPlanStageIndex() const{ return PlanStageIndex; }
+  // void setPlanEndEffectorIndex( const int & _PlanEndEffectorIndex) { PlanEndEffectorIndex = _PlanEndEffectorIndex; }
+  // int  getPlanEndEffectorIndex() const{ return PlanEndEffectorIndex; }
+  // void setSimTime(const double & _SimTime) { SimTime = _SimTime; }
+  // double getSimTime() const{ return SimTime; }
+  // void setContactInit(const Vector3 _ContactInit){ ContactInit = _ContactInit; }
+  // Vector3 getContactInit() const{ return ContactInit; }
+  // void setContactGoal(const Vector3 _ContactGoal){ ContactGoal = _ContactGoal;}
+  // Vector3 getContactGoal() const{ return ContactGoal;}
+  // void setDirectionInit(const Vector3 & _DirectionInit ){ DirectionInit = _DirectionInit; }
+  // void setDirectionGoal(const Vector3 & _DirectionGoal ){ DirectionGoal = _DirectionGoal; }
+  // Vector3 getGoalDirection() const{ return DirectionGoal; }
+  // void setTransPathFeasiFlag(const bool & _TransPathFeasiFlag){ TransPathFeasiFlag = _TransPathFeasiFlag; }
+  // bool getTransPathFeasiFlag() const{ return TransPathFeasiFlag;}
+  // void setSwingLinkInfoIndex(const int _SwingLinkInfoIndex) {SwingLinkInfoIndex = _SwingLinkInfoIndex; }
+  // int  getSwingLinkInfoIndex() const{ return SwingLinkInfoIndex;}
+  // void setCurrentContactPos(const Vector3 & _CurrentContactPos) {CurrentContactPos = _CurrentContactPos; }
+  // Vector3 getCurrentContactPos() const{ return CurrentContactPos; }
+  // void setTrajConfigOptFlag(const bool & _TrajConfigOptFlag){ TrajConfigOptFlag = _TrajConfigOptFlag;}
+  // bool getTrajConfigOptFlag() const{return TrajConfigOptFlag;}
+  // void setFixedContactStatusInfo(const std::vector<ContactStatusInfo> & _FixedContactStatusInfo){ FixedContactStatusInfo =_FixedContactStatusInfo;}
+
+  double  PushDuration;
+  double  DetectionWait;
+
+  double  TimeStep;
+  double  InitDuration;
+  double  TotalDuration;
+
+  double  ForwardDurationSeed;
+  double  PhaseRatio;             // This ratio determines the boundary between acceleration and deceleration.
+  double  ReductionRatio;
+
+  double  ImpulseForceValue;
+  Vector3 ImpulseForceDirection;
+
+  // int     PlanStageIndex;
+  // int     PlanEndEffectorIndex;    // This PlanEndEffectorIndex saves successful end effector for push recovery.
+  // double  SimTime;
+  // double  FailureTime;
+  // bool    TransPathFeasiFlag;
+  // int     SwingLinkInfoIndex;
+  // Vector3 CurrentContactPos;
+  // bool    TrajConfigOptFlag;
+
+  // DataRecorderInfo DataRecorderObj;
+  // std::string CurrentCasePath;
+  // std::vector<string> EdgeFileNames;
+  // string CtrlCFTrajStr, FailureCFTrajStr;
+  // string CtrlKETrajStr, FailureKETrajStr;
+  // string CtrlVelTrajStr, FailureVelTrajStr;
+  // string FailureStateTrajStr, CtrlStateTrajStr, PlanStateTrajStr;
+  // Vector3 ContactInit, ContactGoal;
+  // Vector3 DirectionInit, DirectionGoal;
+  // Vector3 EndEffectorInitxDir, EndEffectorInityDir;   // For alignment purpose
+  // std::vector<ContactStatusInfo> FixedContactStatusInfo;
+};
+
+struct SelfCollisionInfo{
+  SelfCollisionInfo(){
+    SelfLinkGeoFlag = false;
+  };
+  SelfCollisionInfo(const Robot & SimRobot, const std::map<int, std::vector<int>> & EndEffectorChainIndices, const std::vector<int> & SelfCollisionFreeLink){
+    for (int i = 5; i < SimRobot.q.size(); i++){
+      AABB3D AABB3D_i = SimRobot.geometry[i]->GetAABBTight();
+      Frame3D LinkTransforms_i = SimRobot.links[i].T_World;
+      BoundingBoxes.push_back(AABB3D_i);
+      Transforms.push_back(LinkTransforms_i);
+    }
+
+    for (int i = 0; i < EndEffectorChainIndices.size(); i++){
+      std::vector<int> EndEffectorChainIndex = EndEffectorChainIndices.at(i);
+      for (int j = 5; j < SimRobot.q.size(); j++){
+        if(std::find(EndEffectorChainIndex.begin(), EndEffectorChainIndex.end(), j) == EndEffectorChainIndex.end()){
+          if(std::find(SelfCollisionFreeLink.begin(), SelfCollisionFreeLink.end(), j) == SelfCollisionFreeLink.end()){
+            SelfCollisionLinkMap[i].push_back(j-5);
+          }
+        }
+      }
+    }
+    SelfLinkGeoFlag = true;
+  };
+  void SelfCollisionBoundingBoxesUpdate(const Robot& SimRobot){
+    for (int i = 5; i < SimRobot.q.size(); i++){
+      AABB3D AABB3D_i = SimRobot.geometry[i]->GetAABBTight();
+      BoundingBoxes[i-5] = AABB3D_i;
+      Frame3D LinkTransforms_i = SimRobot.links[i].T_World;
+      Transforms[i-5] = LinkTransforms_i;
+    }
+  }
+
+  void getSingleLinkDistNGrad(const int & LinkCountIndex, const Vector3 & GlobalPoint, double & Dist, Vector3 & DistGrad) const{
+    const int GridNo = 100;
+    double dx = BoundingBoxes[LinkCountIndex].size().x/(1.0 * GridNo);
+    double dy = BoundingBoxes[LinkCountIndex].size().y/(1.0 * GridNo);
+    double dz = BoundingBoxes[LinkCountIndex].size().z/(1.0 * GridNo);
+
+    Dist = BoundingBoxes[LinkCountIndex].signedDistance(GlobalPoint);
+
+    Vector3 GlobalPointx = GlobalPoint;
+    GlobalPointx.x += dx;
+    double Distx = BoundingBoxes[LinkCountIndex].signedDistance(GlobalPointx);
+
+    Vector3 GlobalPointy = GlobalPoint;
+    GlobalPointy.y += dy;
+    double Disty = BoundingBoxes[LinkCountIndex].signedDistance(GlobalPointy);
+
+    Vector3 GlobalPointz = GlobalPoint;
+    GlobalPointz.z += dz;
+    double Distz = BoundingBoxes[LinkCountIndex].signedDistance(GlobalPointz);
+
+    DistGrad.x = (Distx - Dist)/dx;
+    DistGrad.y = (Disty - Dist)/dy;
+    DistGrad.z = (Distz - Dist)/dz;
+    DistGrad.getNormalized(DistGrad);
+  }
+
+  double getSelfCollisionDist(const int & LinkIndex, const Vector3 & GlobalPoint) const{
+    std::vector<int> SelfCollisionLinkIndices = SelfCollisionLinkMap.at(LinkIndex);
+    const int ActLinkNo = SelfCollisionLinkIndices.size();
+    std::vector<double> DistVec;
+    DistVec.reserve(ActLinkNo);
+    for (int i = 0; i < ActLinkNo; i++){
+      int SelfCollisionLinkIndex = SelfCollisionLinkIndices[i];
+      double Dist_i = BoundingBoxes[SelfCollisionLinkIndex].signedDistance(GlobalPoint);
+      DistVec.push_back(Dist_i);
+    }
+    double Dist = *std::min_element(DistVec.begin(), DistVec.end());
+    return Dist;
+  }
+
+  void getSelfCollisionDistNGrad(const int & LinkIndex, const Vector3 & GlobalPoint, double & Dist, Vector3 & Grad) const{
+    // This function is used to calculate robot's self-collision distance given a point.
+    std::vector<int> SelfCollisionLinkIndices = SelfCollisionLinkMap.at(LinkIndex);
+    const int ActLinkNo = SelfCollisionLinkIndices.size();    
+    std::vector<double> DistVec;
+    DistVec.reserve(ActLinkNo);
+    std::vector<Vector3> GradVec;
+    GradVec.reserve(ActLinkNo);
+    std::vector<double> DistWeights;
+    DistWeights.reserve(ActLinkNo);
+    double Dist_i;
+    Vector3 Grad_i;
+    for (int i = 0; i < ActLinkNo; i++){
+      int SelfLinkIndex = SelfCollisionLinkIndices[i];
+      getSingleLinkDistNGrad(SelfLinkIndex, GlobalPoint, Dist_i, Grad_i);
+      DistVec.push_back(Dist_i);
+      GradVec.push_back(Grad_i);
+    }
+    Dist = *std::min_element(DistVec.begin(), DistVec.end());
+    double Scale = abs(Dist);
+    for (int i = 0; i < ActLinkNo; i++){
+      DistWeights.push_back(exp(-1.0 * DistVec[i]/Scale));
+    }
+    // Set its value to be zero!
+    Grad.x = 0.0;
+    Grad.y = 0.0;
+    Grad.z = 0.0;
+    for (int i = 0; i < ActLinkNo; i++)
+      Grad+=DistWeights[i] * GradVec[i];
+    Grad.getNormalized(Grad);
+  }
+  bool SelfLinkGeoFlag;
+  std::vector<AABB3D> BoundingBoxes;
+  std::vector<RigidTransform> Transforms;
+  std::map<int, std::vector<int>> SelfCollisionLinkMap;       // This map saves intermediate joint from End Effector Joint to Pivotal Joint.
+};
+
 #endif

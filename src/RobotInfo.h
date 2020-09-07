@@ -273,6 +273,108 @@ struct PolarPoint {
   Vector3 Direction;
 };
 
+struct DataRecorderInfo{
+  DataRecorderInfo(){
+    PlanStageIndex = -1;
+    LinkNo = -1;
+    FailureMetric = 0.0;
+  };
+  void setPlanStageIndexNLinkNo(const int & _PlanStageIndex, const int & _LinkNo){
+    PlanStageIndex = _PlanStageIndex;
+    LinkNo = _LinkNo;
+  }
+  void setRCSData( const std::vector<Vector3> & _ReachableContacts,
+                    const std::vector<Vector3> & _CollisionFreeContacts,
+                    const std::vector<Vector3> & _SupportiveContacts){
+                      ReachableContacts = _ReachableContacts;
+                      CollisionFreeContacts = _CollisionFreeContacts;
+                      SupportiveContacts = _SupportiveContacts;
+  }
+  void setCCSData(  const std::vector<Vector3> & _CandidateContacts,
+                    const std::vector<Vector3> & _CandidateContactWeights,
+                    const std::vector<Vector3> & _SelectedContacts){
+                      CandidateContacts = _CandidateContacts;
+                      CandidateContactWeights = _CandidateContactWeights;
+                      SelectedContacts = _SelectedContacts;
+  }
+  void setPathWaypoints(const std::vector<Vector3> & _PathWaypoints){ PathWaypoints = _PathWaypoints; }
+  void setTrajs(const LinearPath & _PlannedConfigTraj, const LinearPath & _EndEffectorTraj){
+    PlannedConfigTraj = _PlannedConfigTraj;
+    EndEffectorTraj = _EndEffectorTraj;
+  }
+  void Vector3Writer(const std::vector<Vector3> & ContactPoints, const std::string & ContactPointFileName){
+    if(ContactPoints.size() ==0) return;
+    int NumberOfContactPoints = ContactPoints.size();
+    std::vector<double> FlatContactPoints(3 * NumberOfContactPoints);
+    int FlatContactPointIndex = 0;
+    for (int i = 0; i < NumberOfContactPoints; i++){
+      FlatContactPoints[FlatContactPointIndex] = ContactPoints[i].x;
+      FlatContactPointIndex++;
+      FlatContactPoints[FlatContactPointIndex] = ContactPoints[i].y;
+      FlatContactPointIndex++;
+      FlatContactPoints[FlatContactPointIndex] = ContactPoints[i].z;
+      FlatContactPointIndex++;
+    }
+    FILE * FlatContactPointsFile = NULL;
+    string ContactPointFile = ContactPointFileName + ".bin";
+    const char *ContactPointFile_Name = ContactPointFile.c_str();
+    FlatContactPointsFile = fopen(ContactPointFile_Name, "wb");
+    fwrite(&FlatContactPoints[0], sizeof(double), FlatContactPoints.size(), FlatContactPointsFile);
+    fclose(FlatContactPointsFile);
+    return;
+  }
+  void UpdateWithRecoveryReferenceInfo(const LinearPath & PlannedConfigTraj_, const LinearPath & EndEffectorTraj_, double FailureMetric_){
+    PlannedConfigTraj = PlannedConfigTraj_;
+    EndEffectorTraj   = EndEffectorTraj_;
+    FailureMetric     = FailureMetric_;
+  }
+  void Write2File(const string & CurrentCasePath){
+    // This function will only be called if planning is successful!
+    const string InnerPath = CurrentCasePath + std::to_string(PlanStageIndex) + "_" + std::to_string(LinkNo) + "_";
+    Vector3Writer(ReachableContacts,      InnerPath + "ReachableContacts");
+    Vector3Writer(CollisionFreeContacts,  InnerPath + "CollisionFreeContacts");
+    Vector3Writer(SupportiveContacts,     InnerPath + "SupportiveContacts");
+    Vector3Writer(CandidateContacts,      InnerPath + "CandidateContacts");
+    Vector3Writer(CandidateContactWeights,InnerPath + "CandidateContactWeights");
+    Vector3Writer(SelectedContacts,       InnerPath + "SelectedContacts");
+    Vector3Writer(PathWaypoints,          InnerPath + "PathWaypoints");
+
+    // Failure Metric for strategy selection
+    const string FailureMetricFileName = InnerPath + "FailureMetric.txt";
+    std::ofstream FailureMetricFile (FailureMetricFileName);
+    FailureMetricFile << FailureMetric;
+    FailureMetricFile.close();
+
+    // Write these two trajectories into files.
+    std::ofstream PlannedConfigTrajFile;
+    const string PlannedConfigTrajName = InnerPath + "PlannedConfigTraj.path";
+    PlannedConfigTrajFile.open (PlannedConfigTrajName.c_str());
+    PlannedConfigTraj.Save(PlannedConfigTrajFile);
+    PlannedConfigTrajFile.close();
+
+    std::ofstream EndEffectorTrajFile;
+    const string EndEffectorTrajName = InnerPath + "EndEffectorTraj.path";
+    EndEffectorTrajFile.open(EndEffectorTrajName.c_str());
+    EndEffectorTraj.Save(EndEffectorTrajFile);
+    EndEffectorTrajFile.close();
+  }
+  std::vector<Vector3> ReachableContacts;
+  std::vector<Vector3> CollisionFreeContacts;
+  std::vector<Vector3> SupportiveContacts;
+  std::vector<Vector3> CandidateContacts;
+  std::vector<Vector3> CandidateContactWeights;
+  std::vector<Vector3> SelectedContacts;
+  std::vector<Vector3> PathWaypoints;
+
+  LinearPath  PlannedConfigTraj;
+  LinearPath  EndEffectorTraj;
+  double      FailureMetric;
+
+  int PlanStageIndex;
+  int LinkNo;
+};
+
+
 struct ReachabilityMap {
   // This struct is used to save the reachability map
   ReachabilityMap(){
@@ -388,13 +490,15 @@ struct SimPara{
     PhaseRatio = -1.0;  
     ReductionRatio = -1.0;
 
+    ContactSelectionCoeff = 1.25;
+
     ImpulseForceValue = -1.0;
     ImpulseForceDirection.setZero();
 
     FailureTime = -1.0;
   };
   SimPara(const std::vector<double> & SimParaVec) {
-    assert (SimParaVec.size() == 8);
+    assert (SimParaVec.size() == 9);
     PushDuration = SimParaVec[0];
     DetectionWait = SimParaVec[1];
 
@@ -405,6 +509,8 @@ struct SimPara{
     ForwardDurationSeed = SimParaVec[5];
     PhaseRatio = SimParaVec[6];             // This ratio determines the boundary between acceleration and deceleration.
     ReductionRatio = SimParaVec[7];
+
+    ContactSelectionCoeff = SimParaVec[8];
   }
   void CurrentCasePathUpdate(const string & CurrentCasePath_){
     CurrentCasePath = CurrentCasePath_;
@@ -450,28 +556,36 @@ struct SimPara{
   void    setImpulseForce(double ImpulseForceValue_, Vector3 ImpulseForceDirection_){ ImpulseForceValue = ImpulseForceValue_; ImpulseForceDirection = ImpulseForceDirection_;}
   void    getImpulseForce(double & ImpulseForceValue_, Vector3 & ImpulseForceDirection_ ) const { ImpulseForceValue_ = ImpulseForceValue;  ImpulseForceDirection_ = ImpulseForceDirection; }
   string  getCurrentCasePath() const{ return CurrentCasePath; }
-  void setPlanStageIndex(const int & _PlanStageIndex) {PlanStageIndex = _PlanStageIndex; }
-  int  getPlanStageIndex() const{ return PlanStageIndex; }
-  void setSimTime(const double & _SimTime) { SimTime = _SimTime; }
-  double getSimTime() const{ return SimTime; }
-  // void setPlanEndEffectorIndex( const int & _PlanEndEffectorIndex) { PlanEndEffectorIndex = _PlanEndEffectorIndex; }
-  // int  getPlanEndEffectorIndex() const{ return PlanEndEffectorIndex; }
-  // void setContactInit(const Vector3 _ContactInit){ ContactInit = _ContactInit; }
-  // Vector3 getContactInit() const{ return ContactInit; }
-  // void setContactGoal(const Vector3 _ContactGoal){ ContactGoal = _ContactGoal;}
-  // Vector3 getContactGoal() const{ return ContactGoal;}
-  // void setDirectionInit(const Vector3 & _DirectionInit ){ DirectionInit = _DirectionInit; }
-  // void setDirectionGoal(const Vector3 & _DirectionGoal ){ DirectionGoal = _DirectionGoal; }
-  // Vector3 getGoalDirection() const{ return DirectionGoal; }
+  void    setPlanStageIndex(const int & _PlanStageIndex) {PlanStageIndex = _PlanStageIndex; }
+  int     getPlanStageIndex() const{ return PlanStageIndex; }
+  void    setSimTime(const double & _SimTime) { SimTime = _SimTime; }
+  double  getSimTime() const{ return SimTime; }
+  void    setInitContactPos(const Vector3 & InitContactPos_){ InitContactPos = InitContactPos_; }
+  Vector3 getInitContactPos() const{ return InitContactPos; }
+  void    setInitContactDirection(const Vector3 & InitContactDirection_) { InitContactDirection = InitContactDirection_; }
+  Vector3 getInitContactDirection() const{return InitContactDirection; }
+  void    setGoalContactPos(const Vector3 & GoalContactPos_) { GoalContactPos = GoalContactPos_; }
+  Vector3 getGoalContactPos() const{ return GoalContactPos; }
+  void    setGoalContactDirection(const Vector3 & GoalContactDirection_) { GoalContactDirection = GoalContactDirection_; }
+  Vector3 getGoalContactDirection() const{ return GoalContactDirection; };
+
+  void    setSwingLinkInfoIndex(const int & _SwingLinkInfoIndex) { SwingLinkInfoIndex = _SwingLinkInfoIndex; }
+  int     getSwingLinkInfoIndex() const{ return SwingLinkInfoIndex;}
+  double  getContactSelectionCoeff() const{ return ContactSelectionCoeff; }
+
+  void    setOneHandAlreadyFlag(const bool & OneHandAlreadyFlag_) { OneHandAlreadyFlag = OneHandAlreadyFlag_; }
+  bool    getOneHandAlreadyFlag() const { return OneHandAlreadyFlag; }
+
+  void    setPlanEndEffectorIndex( const int & PlanEndEffectorIndex_) { PlanEndEffectorIndex = PlanEndEffectorIndex_; }
+  int     getPlanEndEffectorIndex() const{ return PlanEndEffectorIndex; }
+  void    setFixedContactStatusInfo(const std::vector<ContactStatusInfo> & _FixedContactStatusInfo){ FixedContactStatusInfo =_FixedContactStatusInfo;}
+
   // void setTransPathFeasiFlag(const bool & _TransPathFeasiFlag){ TransPathFeasiFlag = _TransPathFeasiFlag; }
   // bool getTransPathFeasiFlag() const{ return TransPathFeasiFlag;}
-  // void setSwingLinkInfoIndex(const int _SwingLinkInfoIndex) {SwingLinkInfoIndex = _SwingLinkInfoIndex; }
-  // int  getSwingLinkInfoIndex() const{ return SwingLinkInfoIndex;}
   // void setCurrentContactPos(const Vector3 & _CurrentContactPos) {CurrentContactPos = _CurrentContactPos; }
   // Vector3 getCurrentContactPos() const{ return CurrentContactPos; }
   // void setTrajConfigOptFlag(const bool & _TrajConfigOptFlag){ TrajConfigOptFlag = _TrajConfigOptFlag;}
   // bool getTrajConfigOptFlag() const{return TrajConfigOptFlag;}
-  // void setFixedContactStatusInfo(const std::vector<ContactStatusInfo> & _FixedContactStatusInfo){ FixedContactStatusInfo =_FixedContactStatusInfo;}
 
   double  PushDuration;
   double  DetectionWait;
@@ -483,6 +597,8 @@ struct SimPara{
   double  ForwardDurationSeed;
   double  PhaseRatio;             // This ratio determines the boundary between acceleration and deceleration.
   double  ReductionRatio;
+
+  double  ContactSelectionCoeff; 
 
   double  ImpulseForceValue;
   Vector3 ImpulseForceDirection;
@@ -497,17 +613,19 @@ struct SimPara{
   int     PlanStageIndex;
   double  SimTime;
 
-  // int     PlanEndEffectorIndex;    // This PlanEndEffectorIndex saves successful end effector for push recovery.
+  int     SwingLinkInfoIndex;
+  bool    OneHandAlreadyFlag; 
+  int     PlanEndEffectorIndex;    // This PlanEndEffectorIndex saves successful end effector for push recovery.
   // bool    TransPathFeasiFlag;
-  // int     SwingLinkInfoIndex;
   // Vector3 CurrentContactPos;
   // bool    TrajConfigOptFlag;
 
-  // DataRecorderInfo DataRecorderObj;
-  // Vector3 ContactInit, ContactGoal;
-  // Vector3 DirectionInit, DirectionGoal;
+  DataRecorderInfo DataRecorderObj;
+  Vector3 InitContactPos, InitContactDirection;
+  Vector3 GoalContactPos, GoalContactDirection;
+  std::vector<ContactStatusInfo> FixedContactStatusInfo;
+
   // Vector3 EndEffectorInitxDir, EndEffectorInityDir;   // For alignment purpose
-  // std::vector<ContactStatusInfo> FixedContactStatusInfo;
 };
 
 struct SelfCollisionInfo{
@@ -620,20 +738,22 @@ struct SelfCollisionInfo{
   std::map<int, std::vector<int>> SelfCollisionLinkMap;       // This map saves intermediate joint from End Effector Joint to Pivotal Joint.
 };
 
-struct ControlReferenceInfo{
-    ControlReferenceInfo(){
+struct RecoveryReferenceInfo{
+  RecoveryReferenceInfo(){
     ReadyFlag = false;
     TouchDownFlag = false;
     OneHandAlreadyFlag = false;
     ControlReferenceType = -1;
     SwingLinkInfoIndex = -1;           // Used for RobotLinkInfo
     ContactStatusInfoIndex = -1;
+    WaitTime = -1.0;
+    FailureMetric = -1.0;
+
     GoalContactPos.setZero();
     GoalContactGrad.setZero();
-    FailureMetric = 0.0;
-    }
-  void setFailueMetric(const double & _FailureMetric){ FailureMetric = _FailureMetric; }
-  double getFailueMetric() const{ return FailureMetric; }
+  }
+  void setFailureMetric(const double & _FailureMetric){ FailureMetric = _FailureMetric; }
+  double getFailureMetric() const{ return FailureMetric; }
   void setSwingLinkInfoIndex(const int & _SwingLinkInfoIndex) {SwingLinkInfoIndex = _SwingLinkInfoIndex;}
   int  getSwingLinkInfoIndex() const{ return SwingLinkInfoIndex; }
   bool getReadyFlag() const{ return ReadyFlag;}
@@ -807,6 +927,55 @@ struct PIPInfo{
   Vector3 x_unit, y_unit, z_unit;
   Vector3 edge_a, edge_b;                     // The Edge points from edge_a to edge_b.
   Vector3 intersection;                     // The point where the COM intersects the edge.
+};
+
+struct ContactForm{
+  ContactForm(){
+    SwingLinkInfoIndex = -1;
+    ContactType = -1;
+  };
+  ContactForm(      const std::vector<ContactStatusInfo> & _ContactStatusInfoObj,
+                    const int & _SwingLinkInfoIndex,
+                    const int & _ContactType):  FixedContactStatusInfo(_ContactStatusInfoObj),
+                                                SwingLinkInfoIndex(_SwingLinkInfoIndex),
+                                                ContactType(_ContactType){};
+  std::vector<ContactStatusInfo> FixedContactStatusInfo;
+  int SwingLinkInfoIndex;
+  int ContactType;
+};
+
+struct InvertedPendulumInfo{
+  InvertedPendulumInfo(){
+    L = -1.0;
+    g = -1.0;
+    Theta = -1.0;
+    Thetadot = -1.0;
+    COMPos.setZero();
+    COMVel.setZero();
+    edge_a.setZero();
+    edge_b.setZero();
+  };
+  InvertedPendulumInfo( const double & _L,
+                        const double & _g,
+                        const double & _Theta,
+                        const double & _Thetadot,
+                        const Vector3 & _COMPos,
+                        const Vector3 & _COMVel): L(_L),
+                                                  g(_g),
+                                                  Theta(_Theta),
+                                                  Thetadot(_Thetadot),
+                                                  COMPos(_COMPos),
+                                                  COMVel(_COMVel){};
+  void setEdges(const Vector3 & _edge_a, const Vector3 & _edge_b){
+    edge_a = _edge_a;
+    edge_b = _edge_b;
+  }
+  double L, g;
+  double Theta;
+  double Thetadot;
+  Vector3 COMPos;
+  Vector3 COMVel;
+  Vector3 edge_a, edge_b;
 };
 
 #endif

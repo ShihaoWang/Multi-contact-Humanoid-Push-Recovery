@@ -32,10 +32,10 @@ int SimulationWithMethod(WorldSimulation & Sim, const std::vector<ContactStatusI
   double InitTime = Sim.time;
   SimParaObj.FailureTime = 0.0;
 
-  ControlReferenceInfo  ControlReferenceObj;                            // Used for control reference generation.
-  Robot                 SimRobot;
-  bool                  FailureFlag = false;
-  bool                  OverallFailureFlag = false;
+  RecoveryReferenceInfo   RecoveryReferenceInfoObj;                            // Used for control reference generation.
+  Robot                   SimRobot;
+  bool                    FailureFlag = false;
+  bool                    OverallFailureFlag = false;
   std::vector<ContactStatusInfo> curContactInfo =  InitContactInfo;
   while(Sim.time <= SimParaObj.TotalDuration + SimParaObj.InitDuration){
     SimRobot = *Sim.world->robots[0];
@@ -63,8 +63,8 @@ int SimulationWithMethod(WorldSimulation & Sim, const std::vector<ContactStatusI
           if(FailureFlag){
             SimParaObj.setPlanStageIndex(PlanStageIndex);
             SimParaObj.setSimTime(SimTime);
-            // ControlReferenceObj = ControlReferenceGene(SimRobot, curContactInfo, RMObject, SelfLinkGeoObj, SimParaObj);
-            if(ControlReferenceObj.getReadyFlag()){
+            RecoveryReferenceInfoObj = RecoveryReferenceComputation(SimRobot, curContactInfo, SelfCollisionInfoObj, SimParaObj);
+            if(RecoveryReferenceInfoObj.getReadyFlag()){
               CtrlFlag = true;
               CtrlStartTime = SimTime;
               PlanStageIndex++;
@@ -78,13 +78,13 @@ int SimulationWithMethod(WorldSimulation & Sim, const std::vector<ContactStatusI
        } 
        else{
         double InnerTime = SimTime - CtrlStartTime;
-        // std::pair<Config, Config> ConfigPair = ConfigReferenceGene(SimRobot, InnerTime, RMObject, SelfLinkGeoObj, ControlReferenceObj, SimParaObj);
+        // std::pair<Config, Config> ConfigPair = ConfigReferenceGene(SimRobot, InnerTime, RMObject, SelfLinkGeoObj, RecoveryReferenceInfoObj, SimParaObj);
         // qDes = ConfigPair.first;
         // qVis = ConfigPair.second;
-        if (ControlReferenceObj.getTouchDownFlag()){
+        if (RecoveryReferenceInfoObj.getTouchDownFlag()){
           CtrlFlag = false;
           DetectionCount = 0.0;
-          curContactInfo = ControlReferenceObj.GoalContactStatus;
+          curContactInfo = RecoveryReferenceInfoObj.GoalContactStatus;
           FailureFlag = false;
         }
       }
@@ -97,7 +97,6 @@ int SimulationWithMethod(WorldSimulation & Sim, const std::vector<ContactStatusI
     Sim.Advance(SimParaObj.TimeStep);
     Sim.UpdateModel();
   }
-  int PushRecovSuccFlag = 0;
   if(!FailureChecker(SimRobot)) return 1;
   return 0;
 }

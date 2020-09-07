@@ -71,7 +71,11 @@ add_executable(MyApp
 	       src/RobotUtils.cpp
 	       src/SimulationRelated.cpp
 	       src/SimulationWithMethod.cpp
-	       src/ConvexPolytope.cpp)
+	       src/ConvexPolytope.cpp
+               src/OptimalContactFinder.cpp
+	       src/RecoveryReference.cpp
+	       src/RecoveryReferenceInner.cpp
+	       src/CandidateContactStatus.cpp)
 
 
 target_link_libraries(MyApp  ${KLAMPT_LIBRARIES} ${SNOPT_LIBRARIES} ${GUROBI_LIBRARIES} ${CILANTRO_LIBRARIES} ${GLEW_LIBRARY})

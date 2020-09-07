@@ -47,15 +47,32 @@ bool                            FailureChecker(const Robot & SimRobot);
 bool                            PenetrationTester(const Robot & SimRobotObj, int SwingLinkInfoIndex);
 double                          FailureMetricEval(const std::vector<PIPInfo> & PIPTotal);
 void                            StateLogger(WorldSimulation & Sim, LinearPath & CtrlStateTraj, LinearPath & PlanStateTraj, std::vector<double> & qDes, const SimPara & SimParaObj);
+bool                            OneHandAlreadyChecker(const ContactForm & ContactFormObj);
+void                            PlanTimeRecorder(double PlanTimeVal, const string & CurrentCasePath);
+void                            PlanningInfoFileAppender(int PlanStageIndex, int TotalLinkNo, const string & CurrentCasePath, double CurTime);
 
 
 /* 3. Simulation */
-int SimulationWithMethod(WorldSimulation & Sim, const std::vector<ContactStatusInfo> & InitContactInfo, SelfCollisionInfo & SelfCollisionInfoObj, SimPara & SimParaObj);
+int                             SimulationWithMethod(WorldSimulation & Sim, const std::vector<ContactStatusInfo> & InitContactInfo, SelfCollisionInfo & SelfCollisionInfoObj, SimPara & SimParaObj);
 
 /* 4. Simulation Related */
 LinearPath                      InitialSimulation(WorldSimulation & Sim, const SimPara & SimParaObj);
 void                            PushImposer(WorldSimulation & Sim, double CurTime, const SimPara & SimParaObj, bool FailureFlag);
 
-/* Convex Polytope */
+/* 5. Convex Polytope */
 std::vector<PIPInfo>            PIPGenerator( const Vector3 & COMPos, const Vector3 & COMVel, const std::vector<Vector3> & ContactPoints);
+PIPInfo                         TipOverPIPGenerator(const Vector3 & COMPos, const Vector3 & COMVel, const std::vector<Vector3> & ActiveContacts, bool & ValidFlag);
+
+std::vector<ContactForm>        getCandidateContactStatus(const Robot & SimRobot, const std::vector<ContactStatusInfo> & RobotContactInfo);
+std::vector<Vector3>            OptimalContactSearcher(const Robot & SimRobot, const PIPInfo & PIPObj, const ContactForm & ContactFormObj, SimPara & SimParaObj);
+
+/* 6. Recovery Reference */
+
+RecoveryReferenceInfo           RecoveryReferenceComputation(   const Robot & SimRobot,
+                                                                const std::vector<ContactStatusInfo> & curRobotContactInfo,
+                                                                SelfCollisionInfo & SelfCollisionInfoObj,
+                                                                SimPara & SimParaObj);
+RecoveryReferenceInfo           RecoveryReferenceComputationInner(  const Robot & SimRobot,                           const PIPInfo & TipOverPIPObj, 
+                                                                    SelfCollisionInfo & SelfCollisionInfoObj,   const ContactForm & ContactFormObj, 
+                                                                    SimPara & SimParaObj);                                                    
 #endif

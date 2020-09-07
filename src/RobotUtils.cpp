@@ -217,3 +217,31 @@ void StateLogger(WorldSimulation & Sim, LinearPath & CtrlStateTraj, LinearPath &
   PlanStateTraj.Append(Sim.time,    Config(qDes));
   return;
 }
+
+bool OneHandAlreadyChecker(const ContactForm & ContactFormObj){
+  if((ContactFormObj.FixedContactStatusInfo[2].LocalContactStatus[0])&&(ContactFormObj.SwingLinkInfoIndex == 3)) return true;
+  if((ContactFormObj.FixedContactStatusInfo[3].LocalContactStatus[0])&&(ContactFormObj.SwingLinkInfoIndex == 2)) return true;
+  return false;
+}
+
+void PlanTimeRecorder(double PlanTimeVal, const string & CurrentCasePath){
+  // This function saves the total planning time needed for each planning procedure.
+  string PlanTimeFileStr = CurrentCasePath + "PlanTime.txt";
+  const char *PlanTimeFile_Name = PlanTimeFileStr.c_str();
+
+  std::ofstream PlanTimeFile;
+  PlanTimeFile.open(PlanTimeFile_Name, std::ios_base::app);
+  PlanTimeFile<<std::to_string(PlanTimeVal);
+  PlanTimeFile<<"\n";
+  PlanTimeFile.close();
+}
+
+void PlanningInfoFileAppender(int PlanStageIndex, int TotalLinkNo, const string & CurrentCasePath, double CurTime){
+  // This function saves the simulation time where contact planning happens, PlanStageIndex, and TotalLinkNo.
+  std::ofstream PlanningInfoFileWriter;
+  string PlanningInfoFileStr = CurrentCasePath + "PlanningInfoFile.txt";
+  const char *PlanningInfoFileStr_Name = PlanningInfoFileStr.c_str();
+  PlanningInfoFileWriter.open(PlanningInfoFileStr_Name, std::ios_base::app);
+  PlanningInfoFileWriter<<std::to_string(PlanStageIndex)<<" "<< std::to_string(TotalLinkNo)<<" "<<std::to_string(CurTime)<<"\n";
+  PlanningInfoFileWriter.close();
+}

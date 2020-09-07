@@ -12,9 +12,11 @@ std::vector<double> getSimParaVec(){
   double PhaseRatio           = 0.6;
   double ReductionRatio       = 0.5;
 
+  double ContactSelectionCoeff= 1.25;
+
   std::vector<double> SimParaVec = {  PushDuration, DetectionWait, 
                                       TimeStep, InitDuration, TotalDuration, 
-                                      ForwardDurationSeed, PhaseRatio, ReductionRatio};
+                                      ForwardDurationSeed, PhaseRatio, ReductionRatio, ContactSelectionCoeff};
   return SimParaVec;                                   
 }
 

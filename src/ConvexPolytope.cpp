@@ -8,6 +8,7 @@
 #include <cilantro/visualization/visualizer.hpp>
 #include <cilantro/visualization/common_renderables.hpp>
 #include <cilantro/spatial/flat_convex_hull_3d.hpp>
+extern SDFInfo SDFInfoObj;
 static double eps_dist = 0.001;        // 1 mm
 
 static PIPInfo PIPGeneratorInner(const Vector3 & COM, const Vector3 & COMVel, const Vector3 & EdgeA, const Vector3 & EdgeB){
@@ -165,6 +166,64 @@ std::vector<PIPInfo> PIPGenerator( const Vector3 & COMPos, const Vector3 & COMVe
     }
   }
   return PIPTotal;
+}
+
+PIPInfo TipOverPIPGenerator(const Vector3 & COMPos, const Vector3 & COMVel, const std::vector<Vector3> & ActiveContacts, bool & ValidFlag){
+  // This function can only be called when tip over failure has been detected so PIPIndices will never be empty.
+  std::vector<PIPInfo> PIPTotal = PIPGenerator(COMPos, COMVel, ActiveContacts);
+  std::vector<int> PIPIndices;
+  for (int i = 0; i < PIPTotal.size(); i++){
+    double L = PIPTotal[i].L;
+    double theta = PIPTotal[i].theta;
+
+    double pcp_x = L * sin(theta);
+    double pcp_xdot = PIPTotal[i].speed;
+    double pcp_L = L * cos(theta);
+    double pcp_g = PIPTotal[i].g;
+    double pcp_pos_i = 0.0;
+    if(pcp_L>0.0)
+      pcp_pos_i = pcp_x + pcp_xdot * sqrt(pcp_L/pcp_g);
+    if(pcp_pos_i<0.0) PIPIndices.push_back(i);
+  }
+  if(!PIPIndices.size()){
+    ValidFlag = false;
+    return PIPTotal[0];
+  } else ValidFlag = true;
+
+  if(PIPIndices.size()==1) return PIPTotal[PIPIndices[0]];
+  else{
+    // Here it's the case that at most two PIPs could have failures.
+    // Here the rotation is around a vertex.
+    double DisTol = 1e-8;
+    if((PIPTotal[PIPIndices[0]].onFlag)&&(PIPTotal[PIPIndices[1]].onFlag)){
+      Vector3 FirstEdgeA  =     PIPTotal[PIPIndices[0]].edge_a;
+      Vector3 FirstEdgeB  =     PIPTotal[PIPIndices[0]].edge_b;
+      Vector3 SecondEdgeA =     PIPTotal[PIPIndices[1]].edge_a;
+      Vector3 SecondEdgeB =     PIPTotal[PIPIndices[1]].edge_b;
+
+      double FirstEdgeADistA = FirstEdgeA.distanceSquared(SecondEdgeA);
+      double FirstEdgeADistB = FirstEdgeA.distanceSquared(SecondEdgeB);
+
+      double FirstEdgeBDistA = FirstEdgeB.distanceSquared(SecondEdgeA);
+      double FirstEdgeBDistB = FirstEdgeB.distanceSquared(SecondEdgeB);
+
+      Vector3 OriPoint;
+
+      if(FirstEdgeADistA<DisTol)  OriPoint = FirstEdgeA;
+      if(FirstEdgeADistB<DisTol)  OriPoint = FirstEdgeA;
+      if(FirstEdgeBDistA<DisTol)  OriPoint = FirstEdgeB;
+      if(FirstEdgeBDistB<DisTol)  OriPoint = FirstEdgeB;
+
+      Vector3 Normal = SDFInfoObj.SignedDistanceNormal(OriPoint);
+      Vector3 Axis = cross(Normal, COMVel);
+      Axis.setNormalized(Axis);
+      return PIPGeneratorInner(OriPoint, OriPoint + Axis, COMPos, COMVel);
+    }
+    else {
+      if(PIPTotal[PIPIndices[0]].onFlag) return PIPTotal[PIPIndices[0]];
+      else return PIPTotal[PIPIndices[1]];
+    }
+  }
 }
 
 

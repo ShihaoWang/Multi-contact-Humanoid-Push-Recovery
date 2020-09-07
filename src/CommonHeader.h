@@ -50,6 +50,12 @@ void                            StateLogger(WorldSimulation & Sim, LinearPath & 
 bool                            OneHandAlreadyChecker(const ContactForm & ContactFormObj);
 void                            PlanTimeRecorder(double PlanTimeVal, const string & CurrentCasePath);
 void                            PlanningInfoFileAppender(int PlanStageIndex, int TotalLinkNo, const string & CurrentCasePath, double CurTime);
+Vector3                         getEndEffectorTranslationalVelocity(const Robot & SimRobot, int SwingLinkInfoIndex, const Config & JointVelocity);
+Vector3                         getEndEffectorAngularVelocity(const Robot & SimRobot, int SwingLinkInfoIndex, const Config & JointVelocity);
+Vector3                         getPostionFromCubicCoeffs(double s, const std::vector<Vector3> & CubicCoeffs);
+std::vector<double>             LinearSpace(double a, double b, std::size_t N);
+void                            Vector3Writer(const std::vector<Vector3> & ContactPoints, const std::string & ContactPointFileName);
+
 
 
 /* 3. Simulation */
@@ -75,4 +81,11 @@ RecoveryReferenceInfo           RecoveryReferenceComputation(   const Robot & Si
 RecoveryReferenceInfo           RecoveryReferenceComputationInner(  const Robot & SimRobot,                           const PIPInfo & TipOverPIPObj, 
                                                                     SelfCollisionInfo & SelfCollisionInfoObj,   const ContactForm & ContactFormObj, 
                                                                     SimPara & SimParaObj);                                                    
+/* 7. Path Computation */
+CubicSplineInfo                 EndEffectorPathComputation(const Robot & SimRobot, const SelfCollisionInfo & SelfCollisionInfoObj, SimPara & SimParaObj);
+void                            EndEffectorPathSlopeComputation(const Robot & SimRobot, int SwingLinkInfoIndex, Vector3 & PathInitSlope, Vector3 & PathEndSlope, const SimPara & SimParaObj);
+void                            InitialWayPointsComputation(const Robot & SimRobot, int SwingLinkInfoIndex, const SimPara & SimParaObj, std::vector<Vector3> & InitWayPoints, std::vector<double> & sVec);
+std::vector<Vector3>            InitialWayPointsShifter(const std::vector<Vector3> & WayPoints, const int & SwingLinkInfoIndex, const SelfCollisionInfo & SelfCollisionInfoObj, bool & ShifterFlag);
+CubicSplineInfo                 CubicSplineInfoObjComputation(const Robot & SimRobot, const int & SwingLinkInfoIndex, const SelfCollisionInfo & SelfCollisionInfoObj, const SimPara & SimParaObj);
+
 #endif

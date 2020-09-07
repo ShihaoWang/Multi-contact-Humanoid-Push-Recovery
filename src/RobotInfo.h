@@ -580,8 +580,9 @@ struct SimPara{
   int     getPlanEndEffectorIndex() const{ return PlanEndEffectorIndex; }
   void    setFixedContactStatusInfo(const std::vector<ContactStatusInfo> & _FixedContactStatusInfo){ FixedContactStatusInfo =_FixedContactStatusInfo;}
 
-  // void setTransPathFeasiFlag(const bool & _TransPathFeasiFlag){ TransPathFeasiFlag = _TransPathFeasiFlag; }
-  // bool getTransPathFeasiFlag() const{ return TransPathFeasiFlag;}
+  // void    setTransPathFeasiFlag(const bool & _TransPathFeasiFlag){ TransPathFeasiFlag = _TransPathFeasiFlag; }
+  // bool    getTransPathFeasiFlag() const{ return TransPathFeasiFlag; }
+
   // void setCurrentContactPos(const Vector3 & _CurrentContactPos) {CurrentContactPos = _CurrentContactPos; }
   // Vector3 getCurrentContactPos() const{ return CurrentContactPos; }
   // void setTrajConfigOptFlag(const bool & _TrajConfigOptFlag){ TrajConfigOptFlag = _TrajConfigOptFlag;}
@@ -615,8 +616,7 @@ struct SimPara{
 
   int     SwingLinkInfoIndex;
   bool    OneHandAlreadyFlag; 
-  int     PlanEndEffectorIndex;    // This PlanEndEffectorIndex saves successful end effector for push recovery.
-  // bool    TransPathFeasiFlag;
+  int     PlanEndEffectorIndex;     // This PlanEndEffectorIndex saves successful end effector for push recovery.
   // Vector3 CurrentContactPos;
   // bool    TrajConfigOptFlag;
 
@@ -976,6 +976,43 @@ struct InvertedPendulumInfo{
   Vector3 COMPos;
   Vector3 COMVel;
   Vector3 edge_a, edge_b;
+};
+
+struct CubicSplineInfo{
+  CubicSplineInfo(){
+    ReadyFlag = false;
+  };
+  CubicSplineInfo(const std::vector<Vector3> & pVec, const std::vector<double> & sVec){
+    const int n = pVec.size();
+    std::vector<double> S = sVec;
+    std::vector<double> X(n), Y(n), Z(n);
+    for (int i = 0; i < n; i++){
+      double s = sVec[i];
+      X[i] = pVec[i].x;
+      Y[i] = pVec[i].y;
+      Z[i] = pVec[i].z;
+    }
+    tk::spline s_x, s_y, s_z;
+    s_x.set_points(S,X);
+    s_y.set_points(S,Y);
+    s_z.set_points(S,Z);
+    spline_x = s_x;
+    spline_y = s_y;
+    spline_z = s_z;
+  }
+  Vector3 s2Pos(double s){
+    if(s<0.0) s = 0.0;
+    if(s>1.0) s = 1.0;
+    Vector3 Pos;
+    Pos.x = spline_x(s);
+    Pos.y = spline_y(s);
+    Pos.z = spline_z(s);
+    return Pos;
+  }
+  bool getReadyFlag() const { return ReadyFlag; }
+  void setReadyFlag(const bool & ReadyFlag_) { ReadyFlag = ReadyFlag_; }
+  tk::spline spline_x, spline_y, spline_z;
+  bool ReadyFlag;
 };
 
 #endif

@@ -2,6 +2,7 @@
 #include "NonlinearOptimizerInfo.h"
 
 extern std::vector<LinkInfo> LinkInfoObj;
+extern SDFInfo SDFInfoObj;
 
 RecoveryReferenceInfo RecoveryReferenceComputationInner(const Robot & SimRobot,                   const PIPInfo & TipOverPIPObj, 
                                                         SelfCollisionInfo & SelfCollisionInfoObj, const ContactForm & ContactFormObj, 
@@ -22,17 +23,18 @@ RecoveryReferenceInfo RecoveryReferenceComputationInner(const Robot & SimRobot, 
                                             TipOverPIPObj.theta, TipOverPIPObj.thetadot,
                                             COMPos, COMVel);
   InvertedPendulumObj.setEdges(TipOverPIPObj.edge_a, TipOverPIPObj.edge_b);
-  // for (int i = 0; i < OptimalContact.size(); i++) {
-  //   Robot SimRobotInner = SimRobot;
-  //   SimParaObj.setContactGoal(OptimalContact[i]);
-  //   SimParaObj.setTransPathFeasiFlag(false);
-  //   CubicSplineInfo CubicSplineInfoObj = TransientPathGene(SimRobotInner, SelfLinkGeoObj, SimParaObj);
-  //   if(SimParaObj.getTransPathFeasiFlag()){
-  //     EndEffectorPathInfo EndEffectorPathObj(CubicSplineInfoObj);
-  //     ControlReferenceObj = TrajectoryPlanning( SimRobotInner, InvertedPendulumObj, RMObject, SelfLinkGeoObj,
-  //                                               EndEffectorPathObj, OneHandAlreadyFlag, SimParaObj);
-  //       if(ControlReferenceObj.getReadyFlag()) break;
-  //     }
-  //   }
+  for (int i = 0; i < OptimalContact.size(); i++) {
+    Robot SimRobotInner = SimRobot;
+    SimParaObj.setGoalContactPos(OptimalContact[i]);
+    SimParaObj.setGoalContactDirection(SDFInfoObj.SignedDistanceNormal(OptimalContact[i])); 
+
+    CubicSplineInfo CubicSplineInfoObj = EndEffectorPathComputation(SimRobotInner, SelfCollisionInfoObj, SimParaObj);
+    // if(SimParaObj.getTransPathFeasiFlag()){
+    //   EndEffectorPathInfo EndEffectorPathObj(CubicSplineInfoObj);
+    //   ControlReferenceObj = TrajectoryPlanning( SimRobotInner, InvertedPendulumObj, RMObject, SelfLinkGeoObj,
+    //                                             EndEffectorPathObj, OneHandAlreadyFlag, SimParaObj);
+    //     if(ControlReferenceObj.getReadyFlag()) break;
+    //   }
+    }
     return ControlReferenceObj;
   }

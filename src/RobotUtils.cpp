@@ -245,3 +245,60 @@ void PlanningInfoFileAppender(int PlanStageIndex, int TotalLinkNo, const string 
   PlanningInfoFileWriter<<std::to_string(PlanStageIndex)<<" "<< std::to_string(TotalLinkNo)<<" "<<std::to_string(CurTime)<<"\n";
   PlanningInfoFileWriter.close();
 }
+
+Vector3 getEndEffectorTranslationalVelocity(const Robot & SimRobot, int SwingLinkInfoIndex, const Config & JointVelocity){
+  Vector3 EndEffectorVelocity; 
+  SimRobot.GetWorldVelocity(LinkInfoObj[SwingLinkInfoIndex].AvgLocalContact,
+                            LinkInfoObj[SwingLinkInfoIndex].LinkIndex, 
+                            JointVelocity, EndEffectorVelocity);
+  return EndEffectorVelocity;
+}
+
+Vector3 getEndEffectorAngularVelocity(const Robot & SimRobot, int SwingLinkInfoIndex, const Config & JointVelocity){
+  Vector3 EndEffectorAngularVelocity; 
+  SimRobot.GetWorldAngularVelocity( LinkInfoObj[SwingLinkInfoIndex].LinkIndex, 
+                                    JointVelocity, EndEffectorAngularVelocity);
+  return EndEffectorAngularVelocity;
+}
+
+Vector3 getPostionFromCubicCoeffs(double s, const std::vector<Vector3> & CubicCoeffs){
+  Vector3 a = CubicCoeffs[0];
+  Vector3 b = CubicCoeffs[1];
+  Vector3 c = CubicCoeffs[2];
+  Vector3 d = CubicCoeffs[3];
+  Vector3 Position = a * s * s * s + b * s * s + c * s + d;
+  return Position;
+}
+
+std::vector<double> LinearSpace(double a, double b, std::size_t N){
+  double h = (b - a) / static_cast<double>(N-1);
+  std::vector<double> xs(N);
+  std::vector<double>::iterator x;
+  double val;
+  for (x = xs.begin(), val = a; x != xs.end(); ++x, val += h) {
+      *x = val;
+  }
+  return xs;
+}
+
+void Vector3Writer(const std::vector<Vector3> & ContactPoints, const std::string & ContactPointFileName){
+  if(!ContactPoints.size()) return;
+  int NumberOfContactPoints = ContactPoints.size();
+  std::vector<double> FlatContactPoints(3 * NumberOfContactPoints);
+  int FlatContactPointIndex = 0;
+  for (int i = 0; i < NumberOfContactPoints; i++){
+    FlatContactPoints[FlatContactPointIndex] = ContactPoints[i].x;
+    FlatContactPointIndex++;
+    FlatContactPoints[FlatContactPointIndex] = ContactPoints[i].y;
+    FlatContactPointIndex++;
+    FlatContactPoints[FlatContactPointIndex] = ContactPoints[i].z;
+    FlatContactPointIndex++;
+  }
+  FILE * FlatContactPointsFile = NULL;
+  string ContactPointFile = ContactPointFileName + ".bin";
+  const char *ContactPointFile_Name = ContactPointFile.c_str();
+  FlatContactPointsFile = fopen(ContactPointFile_Name, "wb");
+  fwrite(&FlatContactPoints[0], sizeof(double), FlatContactPoints.size(), FlatContactPointsFile);
+  fclose(FlatContactPointsFile);
+  return;
+}

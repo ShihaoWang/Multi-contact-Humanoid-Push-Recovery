@@ -75,7 +75,12 @@ add_executable(MyApp
                src/OptimalContactFinder.cpp
 	       src/RecoveryReference.cpp
 	       src/RecoveryReferenceInner.cpp
-	       src/CandidateContactStatus.cpp)
+	       src/CandidateContactStatus.cpp
+	       src/EndEffectorPathComputation.cpp
+	       src/EndEffectorPathShifter.cpp
+	       src/EndEffectorPathInitialization.cpp
+	       src/EndEffectorPathSlope.cpp
+	       src/EndEffectorPathCubicSpline.cpp)
 
 
 target_link_libraries(MyApp  ${KLAMPT_LIBRARIES} ${SNOPT_LIBRARIES} ${GUROBI_LIBRARIES} ${CILANTRO_LIBRARIES} ${GLEW_LIBRARY})

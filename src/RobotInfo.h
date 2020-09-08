@@ -1078,4 +1078,13 @@ struct CubicSplineInfo{
   std::vector<double> sVec;
 };
 
+struct StagePlanningInfo{
+  StagePlanningInfo(){};
+
+  bool ReadyFlag;
+  double StageTime;
+  std::vector<double> UpdatedConfig;
+  std::vector<double> UpdatedVelocity;
+};
+
 #endif

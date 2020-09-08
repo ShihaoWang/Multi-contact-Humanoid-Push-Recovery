@@ -6,15 +6,15 @@ extern SDFInfo SDFInfoObj;
 
 RecoveryReferenceInfo RecoveryReferenceComputationInner(const Robot & SimRobot,                   const PIPInfo & TipOverPIPObj, 
                                                         SelfCollisionInfo & SelfCollisionInfoObj, const ContactForm & ContactFormObj, 
-                                                        SimPara & SimParaObj){
-  RecoveryReferenceInfo ControlReferenceObj;
+                                                        SimPara & SimParaObj,                     double ForwardTime){
+  RecoveryReferenceInfo RecoveryReferenceInfoObj;
   int SwingLinkInfoIndex = SimParaObj.getSwingLinkInfoIndex();
   Vector3 InitContactPos;       // This is the position of the reference contact for robot's active end effector.
   SimRobot.GetWorldPosition(LinkInfoObj[SwingLinkInfoIndex].AvgLocalContact, LinkInfoObj[SwingLinkInfoIndex].LinkIndex, InitContactPos);
   SimParaObj.setInitContactPos(InitContactPos);
   
-  std::vector<Vector3> OptimalContact = OptimalContactSearcher(SimRobot, TipOverPIPObj, ContactFormObj, SimParaObj);
-  if(!OptimalContact.size()) return ControlReferenceObj;
+  std::vector<Vector3> OptimalContact = OptimalContactSearcher(SimRobot, TipOverPIPObj, ContactFormObj, SimParaObj, ForwardTime);
+  if(!OptimalContact.size()) return RecoveryReferenceInfoObj;
   SimParaObj.setFixedContactStatusInfo(ContactFormObj.FixedContactStatusInfo);
 
   Vector3 COMPos, COMVel;
@@ -29,12 +29,11 @@ RecoveryReferenceInfo RecoveryReferenceComputationInner(const Robot & SimRobot, 
     SimParaObj.setGoalContactDirection(SDFInfoObj.SignedDistanceNormal(OptimalContact[i])); 
 
     CubicSplineInfo CubicSplineInfoObj = EndEffectorPathComputation(SimRobotInner, SelfCollisionInfoObj, SimParaObj);
-    // if(SimParaObj.getTransPathFeasiFlag()){
-    //   EndEffectorPathInfo EndEffectorPathObj(CubicSplineInfoObj);
-    //   ControlReferenceObj = TrajectoryPlanning( SimRobotInner, InvertedPendulumObj, RMObject, SelfLinkGeoObj,
-    //                                             EndEffectorPathObj, OneHandAlreadyFlag, SimParaObj);
-    //     if(ControlReferenceObj.getReadyFlag()) break;
-    //   }
+    
+    if(CubicSplineInfoObj.getReadyFlag()){
+      RecoveryReferenceInfoObj = WholeBodyPlanning(SimRobot, InvertedPendulumObj, SelfCollisionInfoObj, CubicSplineInfoObj, SimParaObj);
+      if(RecoveryReferenceInfoObj.getReadyFlag()) break;
+      }
     }
-    return ControlReferenceObj;
+    return RecoveryReferenceInfoObj;
   }

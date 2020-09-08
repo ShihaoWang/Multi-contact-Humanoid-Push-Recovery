@@ -55,8 +55,12 @@ Vector3                         getEndEffectorAngularVelocity(const Robot & SimR
 Vector3                         getPostionFromCubicCoeffs(double s, const std::vector<Vector3> & CubicCoeffs);
 std::vector<double>             LinearSpace(double a, double b, std::size_t N);
 void                            Vector3Writer(const std::vector<Vector3> & ContactPoints, const std::string & ContactPointFileName);
-
-
+QuaternionRotation              getEndEffectorQuaternion(const Robot & SimRobotInner, int SwingLinkInfoIndex);
+std::vector<int>                SwingLinkChainSelector(const ReachabilityMap & ReachabilityMapObj, int SwingLinkInfoIndex, bool OneHandAlreadyFlag);
+std::vector<Vector3>            getEndEffectorXYZAxes(const Robot & SimRobotInner, int SwingLinkInfoIndex);
+std::vector<Vector3>            BoxVertices(const Box3D & Box3DObj);
+bool                            AllPenetrationTester(const Robot & SimRobotObj);
+void                            RobotConfigWriter(const std::vector<double> & Config, const string & user_path, const string &config_file_name);
 
 /* 3. Simulation */
 int                             SimulationWithMethod(WorldSimulation & Sim, const std::vector<ContactStatusInfo> & InitContactInfo, SelfCollisionInfo & SelfCollisionInfoObj, SimPara & SimParaObj);
@@ -70,7 +74,7 @@ std::vector<PIPInfo>            PIPGenerator( const Vector3 & COMPos, const Vect
 PIPInfo                         TipOverPIPGenerator(const Vector3 & COMPos, const Vector3 & COMVel, const std::vector<Vector3> & ActiveContacts, bool & ValidFlag);
 
 std::vector<ContactForm>        getCandidateContactStatus(const Robot & SimRobot, const std::vector<ContactStatusInfo> & RobotContactInfo);
-std::vector<Vector3>            OptimalContactSearcher(const Robot & SimRobot, const PIPInfo & PIPObj, const ContactForm & ContactFormObj, SimPara & SimParaObj);
+std::vector<Vector3>            OptimalContactSearcher(const Robot & SimRobot, const PIPInfo & PIPObj, const ContactForm & ContactFormObj, SimPara & SimParaObj, double ForwardTime);
 
 /* 6. Recovery Reference */
 
@@ -80,7 +84,7 @@ RecoveryReferenceInfo           RecoveryReferenceComputation(   const Robot & Si
                                                                 SimPara & SimParaObj);
 RecoveryReferenceInfo           RecoveryReferenceComputationInner(  const Robot & SimRobot,                           const PIPInfo & TipOverPIPObj, 
                                                                     SelfCollisionInfo & SelfCollisionInfoObj,   const ContactForm & ContactFormObj, 
-                                                                    SimPara & SimParaObj);                                                    
+                                                                    SimPara & SimParaObj, double ForwardTime);                                                    
 /* 7. Path Computation */
 CubicSplineInfo                 EndEffectorPathComputation(const Robot & SimRobot, const SelfCollisionInfo & SelfCollisionInfoObj, SimPara & SimParaObj);
 void                            EndEffectorPathSlopeComputation(const Robot & SimRobot, int SwingLinkInfoIndex, Vector3 & PathInitSlope, Vector3 & PathEndSlope, const SimPara & SimParaObj);
@@ -89,4 +93,20 @@ std::vector<Vector3>            InitialWayPointsShifter(const std::vector<Vector
 CubicSplineInfo                 CubicSplineInfoObjComputation(const Robot & SimRobot, const int & SwingLinkInfoIndex, const SelfCollisionInfo & SelfCollisionInfoObj, const SimPara & SimParaObj);
 Vector3                         WayPointShifter(const Vector3 & WayPoint, const int & SwingLinkInfoIndex, const SelfCollisionInfo & SelfCollisionInfoObj, double SelfCollisionTol, bool & ShifterFlag);
 
+/* 8. StageIK */
+std::vector<double>             StageIKOptimization(const Robot & SimRobotInner, const int & SwingLinkInfoIndexInner,
+                                                    const std::vector<int> & SwingLinkChainInner, 
+                                                    const SelfCollisionInfo & SelfCollisionInfoObjInner,  
+                                                    const std::vector<Vector3> & StageIKVector3Vec, 
+                                                    const std::vector<double> & StageIKVec, bool & StageIKFlag);
+std::vector<double>             StagePlanningComputation( double sVal, Robot & SimRobotInner, 
+                                                    const std::vector<Vector3> EndEffecetorAxes,
+                                                    const std::vector<int> & SwingLinkChain,
+                                                    const SelfCollisionInfo & SelfCollisionInfoObj, 
+                                                    const CubicSplineInfo & CubicSplineInfoObj, 
+                                                    const SimPara & SimParaObj, bool & StagePlanningFlag);
+bool                            StageIKOptimizationChecker(const Robot & SimRobotObj, int SwingLinkInfoIndex, const std::vector<int> & SwingLinkChain, const SelfCollisionInfo & SelfCollisionInfoObj, const Vector3 & GoalPos, const std::vector<double> & OptConfig);
+RecoveryReferenceInfo           WholeBodyPlanning(  const Robot & SimRobotInner, const InvertedPendulumInfo & InvertedPendulumInner, 
+                                                    const SelfCollisionInfo & SelfCollisionInfoObjInner, 
+                                                    const CubicSplineInfo & CubicSplineInfoObj, const SimPara & SimParaObj);
 #endif

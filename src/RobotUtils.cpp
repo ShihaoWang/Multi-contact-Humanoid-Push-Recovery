@@ -194,6 +194,21 @@ bool FailureChecker(const Robot & SimRobot){
   return false;
 }
 
+bool AllPenetrationTester(const Robot & SimRobotObj){
+  double DistTol = 1.0;
+  for (int j = 0; j < LinkInfoObj.size(); j++){
+    for (int i = 0; i < LinkInfoObj[j].LocalContacts.size(); i++) {
+    Vector3 LocalPos;
+    SimRobotObj.GetWorldPosition( LinkInfoObj[j].LocalContacts[i],
+                                  LinkInfoObj[j].LinkIndex, LocalPos);
+    double LocalPosDist = SDFInfoObj.SignedDistance(LocalPos);
+    if(LocalPosDist<DistTol) DistTol = LocalPosDist;
+    }
+  }
+  if(DistTol<0.0) return true;
+  else return false;
+}
+
 bool PenetrationTester(const Robot & SimRobotObj, int SwingLinkInfoIndex){
   double DistTol = 1.0;
   for (int i = 0; i < LinkInfoObj[SwingLinkInfoIndex].LocalContacts.size(); i++) {
@@ -301,4 +316,138 @@ void Vector3Writer(const std::vector<Vector3> & ContactPoints, const std::string
   fwrite(&FlatContactPoints[0], sizeof(double), FlatContactPoints.size(), FlatContactPointsFile);
   fclose(FlatContactPointsFile);
   return;
+}
+
+QuaternionRotation getEndEffectorQuaternion(const Robot & SimRobotInner, int SwingLinkInfoIndex){
+  // This function is used to get the Quaternion from end effector
+  RobotLink3D EndEffectorLink = SimRobotInner.links[LinkInfoObj[SwingLinkInfoIndex].LinkIndex];
+
+  Vector3 Local_x, Local_y, Local_z;
+  Local_x.x = EndEffectorLink.T_World.R.data[0][0];
+  Local_x.y = EndEffectorLink.T_World.R.data[0][1];
+  Local_x.z = EndEffectorLink.T_World.R.data[0][2];
+
+  Local_y.x = EndEffectorLink.T_World.R.data[1][0];
+  Local_y.y = EndEffectorLink.T_World.R.data[1][1];
+  Local_y.z = EndEffectorLink.T_World.R.data[1][2];
+
+  Local_z.x = EndEffectorLink.T_World.R.data[2][0];
+  Local_z.y = EndEffectorLink.T_World.R.data[2][1];
+  Local_z.z = EndEffectorLink.T_World.R.data[2][2];
+
+  Matrix3 RotMat(Local_x, Local_y, Local_z);
+  QuaternionRotation EndEffectorQuaternion;
+  EndEffectorQuaternion.setMatrix(RotMat);
+
+  return EndEffectorQuaternion;
+}
+
+std::vector<int> SwingLinkChainSelector(const ReachabilityMap & ReachabilityMapObj, int SwingLinkInfoIndex, bool OneHandAlreadyFlag){
+  std::vector<int> SwingLinkChain;
+  if(SwingLinkInfoIndex<=1){
+    SwingLinkChain = ReachabilityMapObj.EndEffectorChainIndices.at(SwingLinkInfoIndex);
+  } else {
+    if(OneHandAlreadyFlag){
+      if(SwingLinkInfoIndex == 2){  
+        SwingLinkChain = ReachabilityMapObj.Link34ToPivotal;
+      } else SwingLinkChain = ReachabilityMapObj.Link27ToPivotal;
+    } else SwingLinkChain = ReachabilityMapObj.EndEffectorChainIndices.at(SwingLinkInfoIndex);
+  }
+  return SwingLinkChain;
+}
+
+
+std::vector<Vector3> getEndEffectorXYZAxes(const Robot & SimRobotInner, int SwingLinkInfoIndex){
+  RobotLink3D EndEffectorLink = SimRobotInner.links[LinkInfoObj[SwingLinkInfoIndex].LinkIndex];
+  Vector3 EndEffectorInitxDir, EndEffectorInityDir, EndEffectorInitzDir;
+  EndEffectorInitxDir.x = EndEffectorLink.T_World.R.data[0][0];
+  EndEffectorInitxDir.y = EndEffectorLink.T_World.R.data[0][1];
+  EndEffectorInitxDir.z = EndEffectorLink.T_World.R.data[0][2];
+
+  EndEffectorInityDir.x = EndEffectorLink.T_World.R.data[1][0];
+  EndEffectorInityDir.y = EndEffectorLink.T_World.R.data[1][1];
+  EndEffectorInityDir.z = EndEffectorLink.T_World.R.data[1][2];
+
+  EndEffectorInitzDir.x = EndEffectorLink.T_World.R.data[2][0];
+  EndEffectorInitzDir.y = EndEffectorLink.T_World.R.data[2][1];
+  EndEffectorInitzDir.z = EndEffectorLink.T_World.R.data[2][2];
+
+  std::vector<Vector3> EndEffectorAxes = {EndEffectorInitxDir, EndEffectorInityDir, EndEffectorInitzDir}; 
+  return EndEffectorAxes;
+}
+
+
+static vector<Vector3> Interpolation(const Vector3 & a, const Vector3 & b, int No){
+  vector<Vector3> Pts(No);
+  double ratio = (1.0)/(1.0 * No + 1.0);
+  for (int i = 0; i < No; i++) {
+    Pts[i] = a + (b-a) * ratio * (1.0 * i + 1.0);
+  }
+  return Pts;
+}
+std::vector<Vector3> BoxVertices(const Box3D & Box3DObj){
+  // Here 4 more points will be sampled along each edge
+  std::vector<Vector3> Vertices;
+  Vector3 GlobalPoint;
+  Vector3 LocalPoint(0.0, 0.0, 0.0);
+  Box3DObj.fromLocal(LocalPoint, GlobalPoint);
+  Vector3 xBox3DOffset = Box3DObj.dims.x * Box3DObj.xbasis;
+  Vector3 yBox3DOffset = Box3DObj.dims.y * Box3DObj.ybasis;
+  Vector3 zBox3DOffset = Box3DObj.dims.z * Box3DObj.zbasis;
+
+  Vector3 A = GlobalPoint;
+  Vector3 B = GlobalPoint + xBox3DOffset;
+  Vector3 C = GlobalPoint + xBox3DOffset + zBox3DOffset;
+  Vector3 D = GlobalPoint + zBox3DOffset;
+
+  Vector3 E = GlobalPoint + yBox3DOffset;
+  Vector3 F = GlobalPoint + xBox3DOffset + yBox3DOffset;
+  Vector3 G = GlobalPoint + xBox3DOffset + zBox3DOffset + yBox3DOffset;
+  Vector3 H = GlobalPoint + zBox3DOffset + yBox3DOffset;
+
+  const int InterPtNo = 0;
+  vector<Vector3> ABEdge = Interpolation(A, B, InterPtNo);
+  vector<Vector3> BCEdge = Interpolation(B, C, InterPtNo);
+  vector<Vector3> CDEdge = Interpolation(C, D, InterPtNo);
+  vector<Vector3> DAEdge = Interpolation(D, A, InterPtNo);
+
+  vector<Vector3> EFEdge = Interpolation(E, F, InterPtNo);
+  vector<Vector3> FGEdge = Interpolation(F, G, InterPtNo);
+  vector<Vector3> GHEdge = Interpolation(G, H, InterPtNo);
+  vector<Vector3> HEEdge = Interpolation(H, E, InterPtNo);
+
+  Vertices.push_back(A);
+  Vertices.insert(Vertices.end(), ABEdge.begin(), ABEdge.end());
+
+  Vertices.push_back(B);
+  Vertices.insert(Vertices.end(), BCEdge.begin(), BCEdge.end());
+
+  Vertices.push_back(C);
+  Vertices.insert(Vertices.end(), CDEdge.begin(), CDEdge.end());
+
+  Vertices.push_back(D);
+  Vertices.insert(Vertices.end(), DAEdge.begin(), DAEdge.end());
+
+  Vertices.push_back(E);
+  Vertices.insert(Vertices.end(), EFEdge.begin(), EFEdge.end());
+
+  Vertices.push_back(F);
+  Vertices.insert(Vertices.end(), FGEdge.begin(), FGEdge.end());
+
+  Vertices.push_back(G);
+  Vertices.insert(Vertices.end(), GHEdge.begin(), GHEdge.end());
+
+  Vertices.push_back(H);
+  Vertices.insert(Vertices.end(), HEEdge.begin(), HEEdge.end());
+  return Vertices;
+}
+
+void RobotConfigWriter(const std::vector<double> & Config, const string & user_path, const string &config_file_name){
+  std::ofstream ConfigInfoFile;
+  std::string config_file_path = user_path + config_file_name;
+  ConfigInfoFile.open (config_file_path);
+  ConfigInfoFile<<std::to_string(Config.size())<<"\t";
+  for (int i = 0; i < Config.size(); i++)
+    ConfigInfoFile << std::to_string(Config[i])<<" ";
+  ConfigInfoFile.close();
 }

@@ -104,7 +104,7 @@ static std::vector<Vector3> OptimalContactFinder(const std::vector<Vector3> & Su
   return SelectedContacts;
 }
 
-std::vector<Vector3> OptimalContactSearcher(const Robot & SimRobot, const PIPInfo & PIPObj, const ContactForm & ContactFormObj, SimPara & SimParaObj){
+std::vector<Vector3> OptimalContactSearcher(const Robot & SimRobot, const PIPInfo & PIPObj, const ContactForm & ContactFormObj, SimPara & SimParaObj, double ForwardTime){
   std::vector<Vector3> OptimalContact;
   Vector3 COMPos, COMVel;
   getCentroidalState(SimRobot, COMPos, COMVel);

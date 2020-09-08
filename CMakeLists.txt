@@ -80,7 +80,11 @@ add_executable(MyApp
 	       src/EndEffectorPathShifter.cpp
 	       src/EndEffectorPathInitialization.cpp
 	       src/EndEffectorPathSlope.cpp
-	       src/EndEffectorPathCubicSpline.cpp)
+	       src/EndEffectorPathCubicSpline.cpp
+	       src/WholeBodyPlanning.cpp
+               src/StagePlanning.cpp
+	       src/StageIKOptimization.cpp
+	       src/StageIKOptimizationChecker.cpp)
 
 
 target_link_libraries(MyApp  ${KLAMPT_LIBRARIES} ${SNOPT_LIBRARIES} ${GUROBI_LIBRARIES} ${CILANTRO_LIBRARIES} ${GLEW_LIBRARY})

@@ -43,7 +43,9 @@ RecoveryReferenceInfo RecoveryReferenceComputation( const Robot & SimRobot,
    
    SimParaObj.DataRecorderObj.setPlanStageIndexNLinkNo(SimParaObj.getPlanStageIndex(), PlanEndEffectorIndex);
 
-   RecoveryReferenceInfo RecoveryReferenceInfoObj_ = RecoveryReferenceComputationInner(SimRobot, TipOverPIP, SelfCollisionInfoObj, ContactFormObj, SimParaObj);
+   double ForwardTimeSeed = SimParaObj.ForwardDurationSeed;
+
+   RecoveryReferenceInfo RecoveryReferenceInfoObj_ = RecoveryReferenceComputationInner(SimRobot, TipOverPIP, SelfCollisionInfoObj, ContactFormObj, SimParaObj, ForwardTimeSeed);
    
    double planning_time = (std::clock() - StartTime)/(double)CLOCKS_PER_SEC;
 

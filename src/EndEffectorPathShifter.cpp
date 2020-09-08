@@ -3,10 +3,9 @@
 extern std::vector<LinkInfo> LinkInfoObj;
 extern SDFInfo SDFInfoObj;
 
-static Vector3 WayPointShifter(const Vector3 & WayPoint, const int & SwingLinkInfoIndex, const SelfCollisionInfo & SelfCollisionInfoObj, bool & ShifterFlag){
-  int    ShifterLimit       = 15;
-  double SelfCollisionTol   = 0.025;    // 2.5 cm
-  double ShifterDistUnit    = 0.005;    // 0.5 cm
+Vector3 WayPointShifter(const Vector3 & WayPoint, const int & SwingLinkInfoIndex, const SelfCollisionInfo & SelfCollisionInfoObj, double SelfCollisionShiftTol, bool & ShifterFlag){
+  int    ShifterLimit       = 25;
+  double ShifterDistUnit    = 0.01;    // 1.0 cm
 
   int    ShifterTime        = 0;
   Vector3 CurWayPoint       = WayPoint;
@@ -16,7 +15,9 @@ static Vector3 WayPointShifter(const Vector3 & WayPoint, const int & SwingLinkIn
        ShifterFlag          = false;
 
   while(ShifterTime<ShifterLimit){
-    
+    SelfShifterFlag      = false;
+    EnviShifterFlag      = false;  
+
     Vector3 ShifterDirection;
     ShifterDirection.setZero();
     // From Self-Collision
@@ -26,7 +27,7 @@ static Vector3 WayPointShifter(const Vector3 & WayPoint, const int & SwingLinkIn
     double EnviDist; Vector3 EnviGrad; EnviGrad.setZero();
     EnviDist = SDFInfoObj.SignedDistance(CurWayPoint);
 
-    if(SelfDist<SelfCollisionTol){
+    if(SelfDist<SelfCollisionShiftTol){
       ShifterDirection+= SelfGrad;
       SelfShifterFlag = true;
     }
@@ -47,13 +48,13 @@ static Vector3 WayPointShifter(const Vector3 & WayPoint, const int & SwingLinkIn
   return CurWayPoint;
 }
 
-std::vector<Vector3> InitialWayPointsShifter(const std::vector<Vector3> & WayPoints, const int & SwingLinkInfoIndex, const SelfCollisionInfo & SelfCollisionInfoObj, bool & ShifterFlag){
+std::vector<Vector3> InitialWayPointsShifter(const std::vector<Vector3> & WayPoints, const int & SwingLinkInfoIndex, const SelfCollisionInfo & SelfCollisionInfoObj, const SimPara & SimParaObj, bool & ShifterFlag){
   std::vector<Vector3> WayPointsNew;
   WayPointsNew.reserve(WayPoints.size());
   ShifterFlag = true;
   for (int i = 0; i < WayPoints.size(); i++){
     bool InnerShifterFlag = true;
-    Vector3 WayPoint = WayPointShifter(WayPoints[i], SwingLinkInfoIndex, SelfCollisionInfoObj, InnerShifterFlag);
+    Vector3 WayPoint = WayPointShifter(WayPoints[i], SwingLinkInfoIndex, SelfCollisionInfoObj, SimParaObj.getSelfCollisionShiftTol(), InnerShifterFlag);
     if(InnerShifterFlag){
       WayPointsNew.push_back(WayPoint);
     } else {

@@ -96,9 +96,9 @@ void InitialWayPointsComputation(const Robot & SimRobot, int SwingLinkInfoIndex,
   std::vector<Vector3> Coeffs = CubicSpline3DCoeff(PathInitPos, PathInitSlope, PathGoalPos, PathEndSlope);
 
   // Initial and End Waypoints should be dense compared to Waypoints in the middle.
-  double EdgeLength       = 0.1;
-  int    EdgePointSize    = 5;
-  int    MiddlePointSize  = 5;
+  double EdgeLength       = 0.05;
+  int    EdgePointSize    = 3;
+  int    MiddlePointSize  = 10;
   
   sVec = sVecComputation(EdgeLength, EdgePointSize, MiddlePointSize);
 

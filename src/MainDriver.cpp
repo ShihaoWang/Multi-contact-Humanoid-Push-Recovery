@@ -11,7 +11,7 @@ void MainDriver(const bool & SpecifiedFlag, const string & ExperimentFolderPath,
     int ImpulseDirSize = 8;
     double ImpulseAngleUnit = 2.0 * M_PI/(1.0 * ImpulseDirSize);
     for (int i = 0; i < ImpulseDirSize; i++){
-
+      i = 4;
       double ImpulseAngle = 1.0 * i * ImpulseAngleUnit;
       Vector3 ImpulseDirection(cos(ImpulseAngle), sin(ImpulseAngle), 0.0);
       ImpulseDirection.setNormalized(ImpulseDirection);

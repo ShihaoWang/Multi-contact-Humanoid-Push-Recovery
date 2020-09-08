@@ -496,9 +496,13 @@ struct SimPara{
     ImpulseForceDirection.setZero();
 
     FailureTime = -1.0;
+
+    SelfCollisionTol = -1.0; 
+    SelfCollisionShiftTol = -1.0;
+    TouchDownTol = -1.0;
   };
   SimPara(const std::vector<double> & SimParaVec) {
-    assert (SimParaVec.size() == 9);
+    assert (SimParaVec.size() == 12);
     PushDuration = SimParaVec[0];
     DetectionWait = SimParaVec[1];
 
@@ -511,6 +515,10 @@ struct SimPara{
     ReductionRatio = SimParaVec[7];
 
     ContactSelectionCoeff = SimParaVec[8];
+
+    SelfCollisionTol = SimParaVec[9];
+    SelfCollisionShiftTol = SimParaVec[10];
+    TouchDownTol = SimParaVec[11];
   }
   void CurrentCasePathUpdate(const string & CurrentCasePath_){
     CurrentCasePath = CurrentCasePath_;
@@ -580,6 +588,10 @@ struct SimPara{
   int     getPlanEndEffectorIndex() const{ return PlanEndEffectorIndex; }
   void    setFixedContactStatusInfo(const std::vector<ContactStatusInfo> & _FixedContactStatusInfo){ FixedContactStatusInfo =_FixedContactStatusInfo;}
 
+  double  getSelfCollisionTol() const { return SelfCollisionTol; }
+  double  getTouchDownTol() const { return TouchDownTol; }
+  double  getSelfCollisionShiftTol() const { return SelfCollisionShiftTol;}
+
   // void    setTransPathFeasiFlag(const bool & _TransPathFeasiFlag){ TransPathFeasiFlag = _TransPathFeasiFlag; }
   // bool    getTransPathFeasiFlag() const{ return TransPathFeasiFlag; }
 
@@ -601,6 +613,10 @@ struct SimPara{
 
   double  ContactSelectionCoeff; 
 
+  double  SelfCollisionTol;       // 1.0cm
+  double  SelfCollisionShiftTol;  // 2.5cm
+  double  TouchDownTol;           // 1.0cm
+  
   double  ImpulseForceValue;
   Vector3 ImpulseForceDirection;
 
@@ -982,7 +998,12 @@ struct CubicSplineInfo{
   CubicSplineInfo(){
     ReadyFlag = false;
   };
-  CubicSplineInfo(const std::vector<Vector3> & pVec, const std::vector<double> & sVec){
+  CubicSplineInfo(const std::vector<Vector3> & pVec_, const std::vector<double> & sVec_){
+    pVec = pVec_;
+    sVec = sVec_;
+    spline_x_y_z_init();
+  }
+  void spline_x_y_z_init(){
     const int n = pVec.size();
     std::vector<double> S = sVec;
     std::vector<double> X(n), Y(n), Z(n);
@@ -1000,7 +1021,47 @@ struct CubicSplineInfo{
     spline_y = s_y;
     spline_z = s_z;
   }
-  Vector3 s2Pos(double s){
+  void insert(const Vector3 & pNew, const double & sNew){
+    double sTol = 1e-12;
+    // A corner case is the duplicate position at same sNew.
+    std::vector<double>::iterator p = std::lower_bound(sVec.begin(), sVec.end(), sNew);
+    int NewPosIndex = p - sVec.begin();
+    double sPre = sVec[NewPosIndex];
+    double sDiff = sPre - sNew;
+    std::vector<Vector3> pVecNew; 
+    std::vector<double> sVecNew;  
+    if(sDiff * sDiff >sTol){
+      pVecNew.reserve(pVec.size() + 1); 
+      sVecNew.reserve(sVec.size() + 1);
+      for (int i = 0; i < NewPosIndex; i++){
+        pVecNew.push_back(pVec[i]);
+        sVecNew.push_back(sVec[i]);
+      }
+      pVecNew.push_back(pNew);
+      sVecNew.push_back(sNew);
+      for (int i = NewPosIndex; i < pVec.size(); i++){
+        pVecNew.push_back(pVec[i]);
+        sVecNew.push_back(sVec[i]);
+      }
+    } else {
+      pVecNew.reserve(pVec.size()); 
+      sVecNew.reserve(sVec.size());
+      for (int i = 0; i < NewPosIndex; i++){
+        pVecNew.push_back(pVec[i]);
+        sVecNew.push_back(sVec[i]);
+      }
+      pVecNew.push_back(pNew);
+      sVecNew.push_back(sNew);
+      for (int i = NewPosIndex+1; i < pVec.size(); i++){
+        pVecNew.push_back(pVec[i]);
+        sVecNew.push_back(sVec[i]);
+      }      
+    }
+    pVec = pVecNew;
+    sVec = sVecNew;
+    spline_x_y_z_init();
+  }
+  Vector3 s2Pos(double s) const{
     if(s<0.0) s = 0.0;
     if(s>1.0) s = 1.0;
     Vector3 Pos;
@@ -1013,6 +1074,8 @@ struct CubicSplineInfo{
   void setReadyFlag(const bool & ReadyFlag_) { ReadyFlag = ReadyFlag_; }
   tk::spline spline_x, spline_y, spline_z;
   bool ReadyFlag;
+  std::vector<Vector3> pVec;
+  std::vector<double> sVec;
 };
 
 #endif

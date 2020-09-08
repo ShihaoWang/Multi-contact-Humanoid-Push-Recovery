@@ -148,12 +148,14 @@ def Robot_Config_Plot(world, DOF, config_init):
     InitialTransitionPoints_data = ContactDataLoader("InitialPathWayPoints")
     # 8.
     ShiftedTransitionPoints_data = ContactDataLoader("ShiftedPathWayPoints")
+
+    TestPathWayPoints_data = ContactDataLoader("FineShiftedPathWayPoints")
     # 9.
     # FineShiftedPathWayPoints_data = ContactDataLoader("FineShiftedPathWayPoints")
     #
     # ReducedOptimalContact_data = ContactDataLoader("ReducedOptimalContact")
 
-    ContactChoice = ShiftedTransitionPoints_data
+    ContactChoice = TestPathWayPoints_data
     # ContactChoice = CollisionFreeContacts_data
     SimRobot = world.robot(0)
     SimRobot.setConfig(config_init)
@@ -228,7 +230,7 @@ def main(*arg):
     # In this case, what we have is a config
     CtrlStateTraj = Trajectory(world.robot(0))
     CaseNo = 1
-    TestNo = 2
+    TestNo = 5
     SpecificPath = EnviName + "/" + str(CaseNo) + "/" + str(1)
     CtrlStateTraj.load(SpecificPath + "/CtrlStateTraj.path")
     # import ipdb; ipdb.set_trace()

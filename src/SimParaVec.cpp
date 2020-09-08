@@ -14,9 +14,14 @@ std::vector<double> getSimParaVec(){
 
   double ContactSelectionCoeff= 1.25;
 
+  double SelfCollisionTol       = 0.01;       // 1.0cm
+  double SelfCollisionShiftTol  = 0.025;      // 2.5cm
+  double TouchDownTol           = 0.01;       // 1.0cm
+
   std::vector<double> SimParaVec = {  PushDuration, DetectionWait, 
                                       TimeStep, InitDuration, TotalDuration, 
-                                      ForwardDurationSeed, PhaseRatio, ReductionRatio, ContactSelectionCoeff};
+                                      ForwardDurationSeed, PhaseRatio, ReductionRatio, ContactSelectionCoeff,
+                                      SelfCollisionTol, SelfCollisionShiftTol, TouchDownTol};
   return SimParaVec;                                   
 }
 

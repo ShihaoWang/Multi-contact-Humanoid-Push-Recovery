@@ -86,7 +86,7 @@ static std::vector<double> sVecComputation(double EdgeLength, int EdgePointSize,
   return sVec;
 }
 
-void InitialWayPointsComputation(const Robot & SimRobot, int SwingLinkInfoIndex, const SimPara & SimParaObj, std::vector<Vector3> & InitWayPoints, std::vector<double> & sVec){
+void InitialWayPointsComputation(const Robot & SimRobot, int SwingLinkInfoIndex, const SimPara & SimParaObj, std::vector<Vector3> & InitWayPoints, std::vector<double> & sVec, int & EdgeSize){
   // This function generates an initial set of waypoints based on a cubic spline.
   Vector3 PathInitPos = SimParaObj.getInitContactPos();
   Vector3 PathGoalPos = SimParaObj.getGoalContactPos();
@@ -96,9 +96,10 @@ void InitialWayPointsComputation(const Robot & SimRobot, int SwingLinkInfoIndex,
   std::vector<Vector3> Coeffs = CubicSpline3DCoeff(PathInitPos, PathInitSlope, PathGoalPos, PathEndSlope);
 
   // Initial and End Waypoints should be dense compared to Waypoints in the middle.
-  double EdgeLength       = 0.05;
-  int    EdgePointSize    = 3;
+  double EdgeLength       = 0.1;
+  int    EdgePointSize    = 4;
   int    MiddlePointSize  = 10;
+  EdgeSize = EdgePointSize - 1;
   
   sVec = sVecComputation(EdgeLength, EdgePointSize, MiddlePointSize);
 

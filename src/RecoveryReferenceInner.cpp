@@ -12,16 +12,16 @@ RecoveryReferenceInfo RecoveryReferenceComputationInner(const Robot & SimRobot, 
   Vector3 InitContactPos;       // This is the position of the reference contact for robot's active end effector.
   SimRobot.GetWorldPosition(LinkInfoObj[SwingLinkInfoIndex].AvgLocalContact, LinkInfoObj[SwingLinkInfoIndex].LinkIndex, InitContactPos);
   SimParaObj.setInitContactPos(InitContactPos);
-  
-  std::vector<Vector3> OptimalContact = OptimalContactSearcher(SimRobot, TipOverPIPObj, ContactFormObj, SimParaObj, ForwardTime);
+  Config UpdatedConfig; 
+  std::vector<Vector3> OptimalContact = OptimalContactSearcher(SimRobot, TipOverPIPObj, ContactFormObj, SimParaObj, UpdatedConfig, ForwardTime);
   if(!OptimalContact.size()) return RecoveryReferenceInfoObj;
   SimParaObj.setFixedContactStatusInfo(ContactFormObj.FixedContactStatusInfo);
 
   Vector3 COMPos, COMVel;
   getCentroidalState(SimRobot, COMPos, COMVel);
-  InvertedPendulumInfo InvertedPendulumObj( TipOverPIPObj.L, TipOverPIPObj.g,
-                                            TipOverPIPObj.theta, TipOverPIPObj.thetadot,
-                                            COMPos, COMVel);
+  InvertedPendulumInfo InvertedPendulumObj( TipOverPIPObj.L,      TipOverPIPObj.g,
+                                            TipOverPIPObj.theta,  TipOverPIPObj.thetadot,
+                                            COMPos,               COMVel);
   InvertedPendulumObj.setEdges(TipOverPIPObj.edge_a, TipOverPIPObj.edge_b);
   for (int i = 0; i < OptimalContact.size(); i++) {
     Robot SimRobotInner = SimRobot;

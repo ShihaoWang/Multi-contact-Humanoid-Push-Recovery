@@ -5,7 +5,7 @@ CubicSplineInfo EndEffectorPathComputation(const Robot & SimRobot, const SelfCol
   CubicSplineInfo CubicSplineInfoObj = CubicSplineInfoObjComputation(SimRobot, SwingLinkInfoIndex, SelfCollisionInfoObj, SimParaObj);
 
   if(CubicSplineInfoObj.getReadyFlag()){
-    const int PathWayPointsSize = 25;
+    const int PathWayPointsSize = 51;
     std::vector<Vector3> PathWayPoints(PathWayPointsSize);
     double sUnit = 1.0/(1.0 * PathWayPointsSize - 1.0);
     int TransitionIndex = 0;
@@ -16,7 +16,6 @@ CubicSplineInfo EndEffectorPathComputation(const Robot & SimRobot, const SelfCol
       TransitionIndex++;
     }
     SimParaObj.DataRecorderObj.setPathWaypoints(PathWayPoints);
-    // Vector3Writer(PathWayPoints, "TransitionPoints");
   }
   return CubicSplineInfoObj;
 }

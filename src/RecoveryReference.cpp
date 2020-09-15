@@ -44,26 +44,45 @@ RecoveryReferenceInfo RecoveryReferenceComputation( const Robot & SimRobot,
    SimParaObj.DataRecorderObj.setPlanStageIndexNLinkNo(SimParaObj.getPlanStageIndex(), PlanEndEffectorIndex);
 
    double ForwardTimeSeed = SimParaObj.ForwardDurationSeed;
-
-   RecoveryReferenceInfo RecoveryReferenceInfoObj_ = RecoveryReferenceComputationInner(SimRobot, TipOverPIP, SelfCollisionInfoObj, ContactFormObj, SimParaObj, ForwardTimeSeed);
-   
+   double ForwardTimeAct = -1.0;
+   RecoveryReferenceInfo RecoveryReferenceInfoObjInner;
+   int MaxIter = 10;
+   double ForwardTime = ForwardTimeSeed;
+   double ForwardTimeTol = 0.01;
+   for (int Iter = 0; Iter < MaxIter; Iter++){
+     RecoveryReferenceInfoObjInner = RecoveryReferenceComputationInner(SimRobot, TipOverPIP, SelfCollisionInfoObj, ContactFormObj, SimParaObj, ForwardTime);
+     ForwardTimeAct = RecoveryReferenceInfoObjInner.TimeTraj.back();
+     double ForwardTimeDiff = ForwardTimeAct - ForwardTime;
+     if(ForwardTimeDiff * ForwardTimeDiff< ForwardTimeTol * ForwardTimeTol){
+       break;
+     } else {
+       ForwardTime = ForwardTimeAct;
+     }
+   }
    double planning_time = (std::clock() - StartTime)/(double)CLOCKS_PER_SEC;
-
+   std::printf("planning_time: %f\n", planning_time);
    StagePlanningTime+=planning_time;
    StartTime = std::clock();
    
-   RecoveryReferenceInfoObj_.setSwingLinkInfoIndex(ContactFormObj.SwingLinkInfoIndex);
-   RecoveryReferenceInfoObj_.setControlReferenceType(ContactFormObj.ContactType);
+   RecoveryReferenceInfoObjInner.setSwingLinkInfoIndex(ContactFormObj.SwingLinkInfoIndex);
+   RecoveryReferenceInfoObjInner.setControlReferenceType(ContactFormObj.ContactType);
 
-   if(RecoveryReferenceInfoObj_.getReadyFlag()){
-     RecoveryReferenceInfoObjVec.push_back(RecoveryReferenceInfoObj_);
-     EstFailureMetricVec.push_back(RecoveryReferenceInfoObj_.getFailureMetric());
-     SimParaObj.DataRecorderObj.UpdateWithRecoveryReferenceInfo(RecoveryReferenceInfoObj_.PlannedConfigTraj, 
-                                                                RecoveryReferenceInfoObj_.EndEffectorTraj, 
-                                                                RecoveryReferenceInfoObj_.getFailureMetric());
+   if(RecoveryReferenceInfoObjInner.getReadyFlag()){
+     RecoveryReferenceInfoObjVec.push_back(RecoveryReferenceInfoObjInner);
+     EstFailureMetricVec.push_back(RecoveryReferenceInfoObjInner.getFailureMetric());
+     SimParaObj.DataRecorderObj.UpdateWithRecoveryReferenceInfo(RecoveryReferenceInfoObjInner.PlannedConfigTraj, 
+                                                                RecoveryReferenceInfoObjInner.EndEffectorTraj, 
+                                                                RecoveryReferenceInfoObjInner.getFailureMetric());
      SimParaObj.DataRecorderObj.Write2File(SimParaObj.getCurrentCasePath());
      PlanEndEffectorIndex++;
    }
+ }
+ if(EstFailureMetricVec.size()){
+        RecoveryReferenceInfoObj = RecoveryReferenceSelector( StagePlanningTime, 
+                                                              EstFailureMetricVec, 
+                                                              RecoveryReferenceInfoObjVec, 
+                                                              LastEndEffectorIndex,
+                                                              SimParaObj);
  }
  return RecoveryReferenceInfoObj;
 }

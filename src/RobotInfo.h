@@ -6,6 +6,8 @@
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <KrisLibrary/meshing/TriMeshTopology.h>
 #include <KrisLibrary/math3d/geometry3d.h>
+#include "KrisLibrary/math3d/AABB3D.h"
+#include "KrisLibrary/math3d/LocalCoordinates3D.h"
 #include <KrisLibrary/geometry/CollisionMesh.h>
 #include <KrisLibrary/geometry/PQP/src/PQP.h>
 #include "Modeling/Paths.h"
@@ -393,7 +395,7 @@ struct ReachabilityMap {
     PointSize = -1;
   }
   std::vector<Vector3> ReachablePointsFinder(const Robot & SimRobot, int SwingLinkInfoIndex, const SDFInfo & SDFInfoObj) const{
-    const double DisTol = 0.01;        // 1cm as a signed distance tolerance.
+    const double DisTol = 0.01;        // 1cm as a distance tolerance.
 
     double Radius           = EndEffectorChainRadius[SwingLinkInfoIndex];
     double PivotalLinkIndex = EndEffectorPivotalIndex[SwingLinkInfoIndex];
@@ -498,11 +500,10 @@ struct SimPara{
     FailureTime = -1.0;
 
     SelfCollisionTol = -1.0; 
-    SelfCollisionShiftTol = -1.0;
     TouchDownTol = -1.0;
   };
   SimPara(const std::vector<double> & SimParaVec) {
-    assert (SimParaVec.size() == 12);
+    assert (SimParaVec.size() == 11);
     PushDuration = SimParaVec[0];
     DetectionWait = SimParaVec[1];
 
@@ -517,8 +518,7 @@ struct SimPara{
     ContactSelectionCoeff = SimParaVec[8];
 
     SelfCollisionTol = SimParaVec[9];
-    SelfCollisionShiftTol = SimParaVec[10];
-    TouchDownTol = SimParaVec[11];
+    TouchDownTol = SimParaVec[10];
   }
   void CurrentCasePathUpdate(const string & CurrentCasePath_){
     CurrentCasePath = CurrentCasePath_;
@@ -587,10 +587,10 @@ struct SimPara{
   void    setPlanEndEffectorIndex( const int & PlanEndEffectorIndex_) { PlanEndEffectorIndex = PlanEndEffectorIndex_; }
   int     getPlanEndEffectorIndex() const{ return PlanEndEffectorIndex; }
   void    setFixedContactStatusInfo(const std::vector<ContactStatusInfo> & _FixedContactStatusInfo){ FixedContactStatusInfo =_FixedContactStatusInfo;}
-
+  std::vector<ContactStatusInfo> getFixedContactStatusInfo() const { return FixedContactStatusInfo; }
+  
   double  getSelfCollisionTol() const { return SelfCollisionTol; }
   double  getTouchDownTol() const { return TouchDownTol; }
-  double  getSelfCollisionShiftTol() const { return SelfCollisionShiftTol;}
 
   // void    setTransPathFeasiFlag(const bool & _TransPathFeasiFlag){ TransPathFeasiFlag = _TransPathFeasiFlag; }
   // bool    getTransPathFeasiFlag() const{ return TransPathFeasiFlag; }
@@ -614,7 +614,6 @@ struct SimPara{
   double  ContactSelectionCoeff; 
 
   double  SelfCollisionTol;       // 1.0cm
-  double  SelfCollisionShiftTol;  // 2.5cm
   double  TouchDownTol;           // 1.0cm
   
   double  ImpulseForceValue;
@@ -644,16 +643,20 @@ struct SimPara{
   // Vector3 EndEffectorInitxDir, EndEffectorInityDir;   // For alignment purpose
 };
 
-struct SelfCollisionInfo{
+struct SelfCollisionInfo: public ScaledLocalCoordinates3D{
   SelfCollisionInfo(){
     SelfLinkGeoFlag = false;
   };
   SelfCollisionInfo(const Robot & SimRobot, const std::map<int, std::vector<int>> & EndEffectorChainIndices, const std::vector<int> & SelfCollisionFreeLink){
     for (int i = 5; i < SimRobot.q.size(); i++){
-      AABB3D AABB3D_i = SimRobot.geometry[i]->GetAABBTight();
+      Box3D Box3D_i = SimRobot.geometry[i]->GetBB();
       Frame3D LinkTransforms_i = SimRobot.links[i].T_World;
-      BoundingBoxes.push_back(AABB3D_i);
-      Transforms.push_back(LinkTransforms_i);
+      BoundingBoxes.push_back(Box3D_i);
+      Vector3 Extremity_i;
+      RigidTransform Transformation_i;
+      BoxInfoUpdate(Box3D_i, Extremity_i, Transformation_i);
+      BoundingBoxExtremities.push_back(Extremity_i);
+      BoundingBoxTransforms.push_back(Transformation_i);
     }
 
     for (int i = 0; i < EndEffectorChainIndices.size(); i++){
@@ -670,32 +673,237 @@ struct SelfCollisionInfo{
   };
   void SelfCollisionBoundingBoxesUpdate(const Robot& SimRobot){
     for (int i = 5; i < SimRobot.q.size(); i++){
-      AABB3D AABB3D_i = SimRobot.geometry[i]->GetAABBTight();
-      BoundingBoxes[i-5] = AABB3D_i;
-      Frame3D LinkTransforms_i = SimRobot.links[i].T_World;
-      Transforms[i-5] = LinkTransforms_i;
+      Box3D Box3D_i = SimRobot.geometry[i]->GetBB();
+      BoundingBoxes[i-5] = Box3D_i;
+      Vector3 Extremity_i;
+      RigidTransform Transformation_i;
+      BoxInfoUpdate(Box3D_i, Extremity_i, Transformation_i);
+      BoundingBoxExtremities[i-5] = Extremity_i;
+      BoundingBoxTransforms[i-5] = Transformation_i;
     }
+  }
+
+  void BBVerticesWriter() const {
+    for (int i = 0; i < BoundingBoxes.size(); i++){
+      std::vector<Vector3> BoundingBoxVertices = BBVertices(i);
+      string BBName = "BB" + to_string(i); 
+      Vector3Writer(BoundingBoxVertices, BBName);
+    }
+  }
+
+  void BoxInfoUpdate(const Box3D & Box, Vector3 & Extremity_, RigidTransform & Transformation_){
+    // This function is used to update the bounding box information.
+    double x_scale = Box.dims.x;
+    double y_scale = Box.dims.y;
+    double z_scale = Box.dims.z;
+
+    // Get rid of the fact that the axes have been scaled
+    Vector3 xbasis = Box.xbasis;
+    Vector3 ybasis = Box.ybasis;
+    Vector3 zbasis = Box.zbasis;
+
+    Vector3 xbasis_, ybasis_, zbasis_;
+    xbasis_.setNormalized(xbasis);
+    ybasis_.setNormalized(ybasis);
+    zbasis_.setNormalized(zbasis);
+
+    Vector3 origin = Box.origin;
+
+    double x_mag = xbasis.norm();
+    double y_mag = ybasis.norm();
+    double z_mag = zbasis.norm();
+
+    double x_scale_act = x_scale * x_mag;
+    double y_scale_act = y_scale * y_mag;
+    double z_scale_act = z_scale * z_mag;
+    
+    Vector3 Extremity(x_scale_act, y_scale_act, z_scale_act);
+    Extremity_ = Extremity;
+    RigidTransform Transformation(xbasis_, ybasis_, zbasis_, origin);
+    Transformation_ = Transformation;
+  }
+
+  std::vector<Vector3> BBVertices(int BBIndex) const{
+    std::vector<Vector3> Vertices(8);
+    // This function calculates the vertices for current bounding box.
+    Box3D CurBB = BoundingBoxes[BBIndex];
+
+    double x_scale = CurBB.dims.x;
+    double y_scale = CurBB.dims.y;
+    double z_scale = CurBB.dims.z;
+
+    Vector3 p0(0.0,      0.0,       0.0);
+    Vector3 p1(x_scale,  0.0,       0.0);
+    Vector3 p2(0.0,      y_scale,   0.0);
+    Vector3 p3(x_scale,  y_scale,   0.0);
+
+    Vector3 pz(0.0,      0.0,      z_scale);
+
+    Vector3 p4 = p0 + pz;
+    Vector3 p5 = p1 + pz;
+    Vector3 p6 = p2 + pz;
+    Vector3 p7 = p3 + pz;
+
+    Vector3 p0_, p1_, p2_, p3_, p4_, p5_, p6_, p7_;
+
+	  Matrix4 basis;
+	  CurBB.getBasis(basis);
+    basis.mulPoint(p0, p0_);
+    basis.mulPoint(p1, p1_);
+    basis.mulPoint(p2, p2_);
+    basis.mulPoint(p3, p3_);
+    basis.mulPoint(p4, p4_);
+    basis.mulPoint(p5, p5_);
+    basis.mulPoint(p6, p6_);
+    basis.mulPoint(p7, p7_);
+
+    Vertices[0] = p0_;
+    Vertices[1] = p1_;
+    Vertices[2] = p2_;
+    Vertices[3] = p3_;
+    Vertices[4] = p4_;
+    Vertices[5] = p5_;
+    Vertices[6] = p6_;
+    Vertices[7] = p7_;
+
+    return Vertices;
+  }
+
+  std::vector<double> LinearSpace(double a, double b, std::size_t N) const {
+    double h = (b - a) / static_cast<double>(N-1);
+    std::vector<double> xs(N);
+    std::vector<double>::iterator x;
+    double val;
+    for (x = xs.begin(), val = a; x != xs.end(); ++x, val += h) {
+      *x = val;
+    }
+    return xs;
+  }
+
+  std::vector<Vector3> TwoPointLine(const Vector3 & p1, const Vector3 & p2) const{
+    int point_number = 100;
+    std::vector<double> line_x = LinearSpace(p1.x, p2.x, point_number);
+    std::vector<double> line_y = LinearSpace(p1.y, p2.y, point_number);
+    std::vector<double> line_z = LinearSpace(p1.z, p2.z, point_number);
+    std::vector<Vector3> LinePoints;
+    Vector3 TempPoint;
+    for (int i = 0; i < point_number; i++){
+      TempPoint.x = line_x[i];
+      TempPoint.y = line_y[i];
+      TempPoint.z = line_z[i];
+      LinePoints.push_back(TempPoint);
+    }
+    return LinePoints;
+  }
+
+  double Box3DsignedDistance(int BoxIndex, const Point3D & GlobalPoint) const{
+    Box3D Box = BoundingBoxes[BoxIndex];
+    Vector3 LocalPoint;
+    BoundingBoxTransforms[BoxIndex].mulInverse(GlobalPoint, LocalPoint);
+    Vector3 Extremity = BoundingBoxExtremities[BoxIndex];
+    bool Inside = true;
+    Vector3 LocalNearestPoint;
+    // Comparison from three dimensions
+    // x dimension
+    if(LocalPoint.x < 0) { 
+      LocalNearestPoint.x = 0.0; 
+      Inside = false;
+    } else {
+      if(LocalPoint.x > Extremity.x) { 
+        LocalNearestPoint.x = Extremity.x; 
+        Inside = false;
+      } else {
+        LocalNearestPoint.x = LocalPoint.x;
+      }
+    }
+    // y dimension
+    if(LocalPoint.y < 0) { 
+      LocalNearestPoint.y = 0.0; 
+      Inside = false;
+    } else {
+      if(LocalPoint.y > Extremity.y) { 
+        LocalNearestPoint.y = Extremity.y; 
+        Inside = false;
+      } else {
+        LocalNearestPoint.y = LocalPoint.y;
+      }
+    }
+    // z dimension
+    if(LocalPoint.z < 0) { 
+      LocalNearestPoint.z = 0.0; 
+      Inside = false;
+    } else {
+      if(LocalPoint.z > Extremity.z) { 
+        LocalNearestPoint.z = Extremity.z; 
+        Inside = false;
+      } else {
+        LocalNearestPoint.z = LocalPoint.z;
+      }
+    }
+    Vector3 GlobalNearestPoint;
+    BoundingBoxTransforms[BoxIndex].mulPoint(LocalNearestPoint, GlobalNearestPoint);
+    Vector3 PointDiff = GlobalNearestPoint - GlobalPoint;
+    if(!Inside) return PointDiff.norm();
+    else {
+      double dmin = Inf;
+      double leftbound = LocalPoint.x;
+      double rightbound = Extremity.x - LocalPoint.x;
+      dmin = min(dmin, min(leftbound, rightbound));    
+
+      leftbound = LocalPoint.y;
+      rightbound = Extremity.y - LocalPoint.y;
+      dmin = min(dmin, min(leftbound, rightbound));
+
+      leftbound = LocalPoint.z;
+      rightbound = Extremity.z - LocalPoint.z;
+      dmin = min(dmin, min(leftbound, rightbound));
+      return -dmin;
+    }
+  }
+
+  void Vector3Writer(const std::vector<Vector3> & ContactPoints, const std::string &ContactPointFileName) const{
+    if(ContactPoints.size()==0){
+      std::cerr<< " ContactPoints has zero element!\n" << endl;
+    }
+    int NumberOfContactPoints = ContactPoints.size();
+    std::vector<double> FlatContactPoints(3 * NumberOfContactPoints);
+    int FlatContactPointIndex = 0;
+    for (int i = 0; i < NumberOfContactPoints; i++){
+      FlatContactPoints[FlatContactPointIndex] = ContactPoints[i].x;
+      FlatContactPointIndex++;
+      FlatContactPoints[FlatContactPointIndex] = ContactPoints[i].y;
+      FlatContactPointIndex++;
+      FlatContactPoints[FlatContactPointIndex] = ContactPoints[i].z;
+      FlatContactPointIndex++;
+    }
+    FILE * FlatContactPointsFile = NULL;
+    string ContactPointFile = ContactPointFileName + ".bin";
+    const char *ContactPointFile_Name = ContactPointFile.c_str();
+    FlatContactPointsFile = fopen(ContactPointFile_Name, "wb");
+    fwrite(&FlatContactPoints[0], sizeof(double), FlatContactPoints.size(), FlatContactPointsFile);
+    fclose(FlatContactPointsFile);
+    return;
   }
 
   void getSingleLinkDistNGrad(const int & LinkCountIndex, const Vector3 & GlobalPoint, double & Dist, Vector3 & DistGrad) const{
     const int GridNo = 100;
-    double dx = BoundingBoxes[LinkCountIndex].size().x/(1.0 * GridNo);
-    double dy = BoundingBoxes[LinkCountIndex].size().y/(1.0 * GridNo);
-    double dz = BoundingBoxes[LinkCountIndex].size().z/(1.0 * GridNo);
+    double dx = BoundingBoxes[LinkCountIndex].dims.x/(1.0 * GridNo);
+    double dy = BoundingBoxes[LinkCountIndex].dims.y/(1.0 * GridNo);
+    double dz = BoundingBoxes[LinkCountIndex].dims.z/(1.0 * GridNo);
 
-    Dist = BoundingBoxes[LinkCountIndex].signedDistance(GlobalPoint);
+    Dist = Box3DsignedDistance(LinkCountIndex, GlobalPoint);
 
     Vector3 GlobalPointx = GlobalPoint;
     GlobalPointx.x += dx;
-    double Distx = BoundingBoxes[LinkCountIndex].signedDistance(GlobalPointx);
+    double Distx = Box3DsignedDistance(LinkCountIndex, GlobalPointx);
 
     Vector3 GlobalPointy = GlobalPoint;
     GlobalPointy.y += dy;
-    double Disty = BoundingBoxes[LinkCountIndex].signedDistance(GlobalPointy);
+    double Disty = Box3DsignedDistance(LinkCountIndex, GlobalPointy);
 
     Vector3 GlobalPointz = GlobalPoint;
     GlobalPointz.z += dz;
-    double Distz = BoundingBoxes[LinkCountIndex].signedDistance(GlobalPointz);
+    double Distz = Box3DsignedDistance(LinkCountIndex, GlobalPointz);
 
     DistGrad.x = (Distx - Dist)/dx;
     DistGrad.y = (Disty - Dist)/dy;
@@ -710,7 +918,7 @@ struct SelfCollisionInfo{
     DistVec.reserve(ActLinkNo);
     for (int i = 0; i < ActLinkNo; i++){
       int SelfCollisionLinkIndex = SelfCollisionLinkIndices[i];
-      double Dist_i = BoundingBoxes[SelfCollisionLinkIndex].signedDistance(GlobalPoint);
+      double Dist_i = Box3DsignedDistance(i, GlobalPoint);
       DistVec.push_back(Dist_i);
     }
     double Dist = *std::min_element(DistVec.begin(), DistVec.end());
@@ -749,9 +957,10 @@ struct SelfCollisionInfo{
     Grad.getNormalized(Grad);
   }
   bool SelfLinkGeoFlag;
-  std::vector<AABB3D> BoundingBoxes;
-  std::vector<RigidTransform> Transforms;
-  std::map<int, std::vector<int>> SelfCollisionLinkMap;       // This map saves intermediate joint from End Effector Joint to Pivotal Joint.
+  std::vector<Box3D>            BoundingBoxes;
+  std::vector<Vector3>          BoundingBoxExtremities;               // Local Extremities
+  std::vector<RigidTransform>   BoundingBoxTransforms;                // Local Transformation
+  std::map<int, std::vector<int>> SelfCollisionLinkMap;               // This map saves intermediate joint from End Effector Joint to Pivotal Joint.
 };
 
 struct RecoveryReferenceInfo{
@@ -999,6 +1208,10 @@ struct CubicSplineInfo{
     ReadyFlag = false;
   };
   CubicSplineInfo(const std::vector<Vector3> & pVec_, const std::vector<double> & sVec_){
+    ReadyFlag = false;
+    CubicSplineInfoUpdate(pVec_, sVec_);
+  }
+  void CubicSplineInfoUpdate(const std::vector<Vector3> & pVec_, const std::vector<double> & sVec_){
     pVec = pVec_;
     sVec = sVec_;
     spline_x_y_z_init();
@@ -1020,46 +1233,6 @@ struct CubicSplineInfo{
     spline_x = s_x;
     spline_y = s_y;
     spline_z = s_z;
-  }
-  void insert(const Vector3 & pNew, const double & sNew){
-    double sTol = 1e-12;
-    // A corner case is the duplicate position at same sNew.
-    std::vector<double>::iterator p = std::lower_bound(sVec.begin(), sVec.end(), sNew);
-    int NewPosIndex = p - sVec.begin();
-    double sPre = sVec[NewPosIndex];
-    double sDiff = sPre - sNew;
-    std::vector<Vector3> pVecNew; 
-    std::vector<double> sVecNew;  
-    if(sDiff * sDiff >sTol){
-      pVecNew.reserve(pVec.size() + 1); 
-      sVecNew.reserve(sVec.size() + 1);
-      for (int i = 0; i < NewPosIndex; i++){
-        pVecNew.push_back(pVec[i]);
-        sVecNew.push_back(sVec[i]);
-      }
-      pVecNew.push_back(pNew);
-      sVecNew.push_back(sNew);
-      for (int i = NewPosIndex; i < pVec.size(); i++){
-        pVecNew.push_back(pVec[i]);
-        sVecNew.push_back(sVec[i]);
-      }
-    } else {
-      pVecNew.reserve(pVec.size()); 
-      sVecNew.reserve(sVec.size());
-      for (int i = 0; i < NewPosIndex; i++){
-        pVecNew.push_back(pVec[i]);
-        sVecNew.push_back(sVec[i]);
-      }
-      pVecNew.push_back(pNew);
-      sVecNew.push_back(sNew);
-      for (int i = NewPosIndex+1; i < pVec.size(); i++){
-        pVecNew.push_back(pVec[i]);
-        sVecNew.push_back(sVec[i]);
-      }      
-    }
-    pVec = pVecNew;
-    sVec = sVecNew;
-    spline_x_y_z_init();
   }
   Vector3 s2Pos(double s) const{
     if(s<0.0) s = 0.0;

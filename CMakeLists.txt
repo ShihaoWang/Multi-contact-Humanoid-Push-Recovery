@@ -75,6 +75,7 @@ add_executable(MyApp
                src/OptimalContactFinder.cpp
 	       src/RecoveryReference.cpp
 	       src/RecoveryReferenceInner.cpp
+	       src/RecoveryReferenceSelector.cpp
 	       src/CandidateContactStatus.cpp
 	       src/EndEffectorPathComputation.cpp
 	       src/EndEffectorPathShifter.cpp
@@ -82,9 +83,15 @@ add_executable(MyApp
 	       src/EndEffectorPathSlope.cpp
 	       src/EndEffectorPathCubicSpline.cpp
 	       src/WholeBodyPlanning.cpp
+	       src/WholeBodyMotionIntegration.cpp
                src/StagePlanning.cpp
 	       src/StageIKOptimization.cpp
-	       src/StageIKOptimizationChecker.cpp)
+	       src/StageIKOptimizationChecker.cpp
+               src/StageTimeComputation.cpp
+	       src/StageTimeComputationInner.cpp
+               src/ConstantAccTime.cpp
+	       src/JointStateUpdate.cpp
+	       src/TouchDownConfigOptimization.cpp)
 
 
 target_link_libraries(MyApp  ${KLAMPT_LIBRARIES} ${SNOPT_LIBRARIES} ${GUROBI_LIBRARIES} ${CILANTRO_LIBRARIES} ${GLEW_LIBRARY})

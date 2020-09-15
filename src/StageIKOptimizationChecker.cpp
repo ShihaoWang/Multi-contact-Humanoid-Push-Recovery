@@ -23,21 +23,21 @@ bool StageIKOptimizationChecker(const Robot & SimRobotObj, int SwingLinkInfoInde
 
   bool OptFlag = true;
   if(SelfCollisionDistTol<-SelfCollisionTol){
-      std::printf("StageIKOptimazation Failure due to Self-collision for Link %d! \n", 
-                  LinkInfoObj[SwingLinkInfoIndex].LinkIndex);
+      std::printf("StageIKOptimazation Failure due to Self-collision for Link %d with Depth %f! \n", 
+                  LinkInfoObj[SwingLinkInfoIndex].LinkIndex, SelfCollisionDistTol);
       OptFlag = false;
   }
 
-  Vector3 EndEffectorAvgPos;
-  SimRobotObj.GetWorldPosition(   LinkInfoObj[SwingLinkInfoIndex].AvgLocalContact, 
-                                  LinkInfoObj[SwingLinkInfoIndex].LinkIndex, 
-                                  EndEffectorAvgPos);
-  Vector3 AvgDiff = EndEffectorAvgPos - GoalPos;
-  double DistTest = AvgDiff.normSquared();
-  if(DistTest>(ContactReachTol * ContactReachTol)){
-    std::printf("StageIKOptimazation Failure due to Goal Contact Non-reachability for Link %d! \n", 
-                LinkInfoObj[SwingLinkInfoIndex].LinkIndex);
-    OptFlag = false;
-  }
+  // Vector3 EndEffectorAvgPos;
+  // SimRobotObj.GetWorldPosition(   LinkInfoObj[SwingLinkInfoIndex].AvgLocalContact, 
+  //                                 LinkInfoObj[SwingLinkInfoIndex].LinkIndex, 
+  //                                 EndEffectorAvgPos);
+  // Vector3 AvgDiff = EndEffectorAvgPos - GoalPos;
+  // double DistTest = AvgDiff.normSquared();
+  // if(DistTest>(ContactReachTol * ContactReachTol)){
+  //   std::printf("StageIKOptimazation Failure due to Goal Contact Non-reachability for Link %d for %f! \n", 
+  //               LinkInfoObj[SwingLinkInfoIndex].LinkIndex, DistTest);
+  //   OptFlag = false;
+  // }
   return OptFlag;
 }

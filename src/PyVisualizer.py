@@ -49,6 +49,13 @@ class MyGLPlugin(vis.GLPluginInterface):
                 collided.append((dist,g[0]))
         return [g[1] for g in sorted(collided)]
 
+def my_draw_hull(h):
+    glEnable(GL_LIGHTING)
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
+    glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE,[1.0,0.25,0.5,0.5])
+    draw_hull.draw_hull(h)
+
 def ContactDataUnplot(vis, ReachableContacts_data):
     RowNo, ColumnNo = ReachableContacts_data.shape
     RowStart = 0
@@ -145,9 +152,13 @@ def Robot_Config_Plot(world, DOF, config_init):
     # TransitionPoints_data = ContactDataLoader("TransitionPoints")
     # import ipdb; ipdb.set_trace()
     # 7.
-    InitialTransitionPoints_data = ContactDataLoader("InitialPathWayPoints")
-    # 8.
-    ShiftedTransitionPoints_data = ContactDataLoader("ShiftedPathWayPoints")
+    # InitialTransitionPoints_data = ContactDataLoader("InitialPathWayPoints")
+    # AdjusterWayPoints_data = ContactDataLoader("AdjusterWayPoints")
+    # SegmentWayPoints_data = ContactDataLoader("SegmentWayPoints")
+    # # 8.
+    # ShiftedTransitionPoints_data = ContactDataLoader("ShiftedPathWayPoints")
+    #
+    # TwoPointLine_data = ContactDataLoader("TwoPointLine")
 
     TestPathWayPoints_data = ContactDataLoader("FineShiftedPathWayPoints")
     # 9.
@@ -156,7 +167,7 @@ def Robot_Config_Plot(world, DOF, config_init):
     # ReducedOptimalContact_data = ContactDataLoader("ReducedOptimalContact")
 
     ContactChoice = TestPathWayPoints_data
-    # ContactChoice = CollisionFreeContacts_data
+    # ContactChoice = TwoPointLine_data
     SimRobot = world.robot(0)
     SimRobot.setConfig(config_init)
     while vis.shown():
@@ -165,6 +176,14 @@ def Robot_Config_Plot(world, DOF, config_init):
         SimRobot.setConfig(config_init)
         # WeightedContactDataPlot(vis, OptimalContact_data, OptimalContactWeights_data)
         ContactDataPlot(vis, ContactChoice)
+        # for i in range(0, 31):
+        #     BBName = "BB" + str(i)
+        #     ConvexHull_data = ContactDataLoader(BBName)
+        #     h = ConvexHull(ConvexHull_data)
+        #     hrender = draw_hull.PrettyHullRenderer(h)
+        #     vis.add("ContactPolytope" + str(i), h)
+        #     vis.setDrawFunc("ContactPolytope" + str(i), my_draw_hull)
+
         vis.unlock()
         ipdb.set_trace()
         time.sleep(0.1)
@@ -231,9 +250,9 @@ def main(*arg):
     CtrlStateTraj = Trajectory(world.robot(0))
     CaseNo = 1
     TestNo = 5
-    SpecificPath = EnviName + "/" + str(CaseNo) + "/" + str(1)
+    SpecificPath = EnviName + "/" + str(CaseNo) + "/" + str(TestNo)
     CtrlStateTraj.load(SpecificPath + "/CtrlStateTraj.path")
-    # import ipdb; ipdb.set_trace()
+    import ipdb; ipdb.set_trace()
 
     Config_Init = CtrlStateTraj.milestones[-1]
 

@@ -209,6 +209,22 @@ bool AllPenetrationTester(const Robot & SimRobotObj){
   else return false;
 }
 
+bool OtherPenetrationTester(const Robot & SimRobotObj, int SwingLinkInfoIndex){
+  double DistTol = 1.0;
+  for (int j = 0; j < LinkInfoObj.size(); j++){
+    if(j == SwingLinkInfoIndex) continue;
+    for (int i = 0; i < LinkInfoObj[j].LocalContacts.size(); i++) {
+    Vector3 LocalPos;
+    SimRobotObj.GetWorldPosition( LinkInfoObj[j].LocalContacts[i],
+                                  LinkInfoObj[j].LinkIndex, LocalPos);
+    double LocalPosDist = SDFInfoObj.SignedDistance(LocalPos);
+    if(LocalPosDist<DistTol) DistTol = LocalPosDist;
+    }
+  }
+  if(DistTol<0.0) return true;
+  else return false;
+}
+
 bool PenetrationTester(const Robot & SimRobotObj, int SwingLinkInfoIndex){
   double DistTol = 1.0;
   for (int i = 0; i < LinkInfoObj[SwingLinkInfoIndex].LocalContacts.size(); i++) {
@@ -450,4 +466,47 @@ void RobotConfigWriter(const std::vector<double> & Config, const string & user_p
   for (int i = 0; i < Config.size(); i++)
     ConfigInfoFile << std::to_string(Config[i])<<" ";
   ConfigInfoFile.close();
+}
+
+static void AngleShifter(const double & AngleRef, double & AngleNew){
+  double PlusError  = AngleNew + 2.0 * M_PI - AngleRef;
+  double MinusError = AngleNew - 2.0 * M_PI - AngleRef;
+  PlusError = PlusError * PlusError;
+  MinusError = MinusError * MinusError;
+  if(PlusError>MinusError) AngleNew -= 2.0 * M_PI;
+  else AngleNew += 2.0 * M_PI;
+}
+
+void WholeBodyConfigAppender(std::vector<Config> & WholeBodyConfigTraj, const Config & UpdatedConfig){
+  // This function aims to address the problem of Euler Angle Discontinuity at boundaries.
+  Config CurrentConfig = WholeBodyConfigTraj.back();
+  Config NewConfig = UpdatedConfig;
+  double CurrentYaw = CurrentConfig[3];
+  double CurrentPitch = CurrentConfig[4];
+  double CurrentRoll = CurrentConfig[5];
+
+  double NewYaw = NewConfig[3];
+  double NewPitch = NewConfig[4];
+  double NewRoll = NewConfig[5];
+
+  if(abs(NewYaw - CurrentYaw)>(M_PI/2.0))
+    AngleShifter(CurrentYaw, NewYaw);
+  if(abs(NewPitch - CurrentPitch)>(M_PI/2.0))
+    AngleShifter(CurrentPitch, NewPitch);
+  if(abs(NewRoll - CurrentRoll)>(M_PI/2.0))
+    AngleShifter(CurrentRoll, NewRoll);
+
+  NewConfig[3] = NewYaw;
+  NewConfig[4] = NewPitch;
+  NewConfig[5] = NewRoll;
+  WholeBodyConfigTraj.push_back(NewConfig);
+  return;
+}
+
+double EstimatedFailureMetric(const Robot & SimRobotInner, const std::vector<ContactStatusInfo> & GoalContactInfo, const Vector3 & COMPos, const Vector3 & COMVel){
+  // This function calculates robot's estimated failure metric given new ContactStatus, COMPos, and COMVel;
+  std::vector<Vector3> ActContactPos = ActiveContactFinder(SimRobotInner, GoalContactInfo);
+  std::vector<PIPInfo> PIPTotal = PIPGenerator(COMPos, COMVel, ActContactPos);
+  double FailureMetric = FailureMetricEval(PIPTotal);
+  return FailureMetric;
 }

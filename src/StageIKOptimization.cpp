@@ -16,7 +16,7 @@ static std::vector<double> InnerConfig;
 static std::vector<double> FixedConfig;
 
 static double EndEffectorTol = 1e-3;
-static double ConfigCoeff = 0.0;
+static double ConfigCoeff = 1e-3;
 
 struct StageIKOpt: public NonlinearOptimizerInfo
 {
@@ -235,6 +235,8 @@ std::vector<double> StageIKOptimization(const Robot & SimRobotInner, const int &
   SimRobotObj.UpdateConfig(Config(OptConfig));
   SimRobotObj.UpdateGeometry();
 
+  StageIKFlag = true;
+  
   StageIKFlag = StageIKOptimizationChecker(SimRobotObj, SwingLinkInfoIndex, SwingLinkChain, SelfCollisionInfoObj, GoalPos, OptConfig);
 
   return OptConfig;

@@ -1,6 +1,10 @@
 #include "CommonHeader.h"
 #include "RobotInfo.h"
 
+extern std::vector<LinkInfo> LinkInfoObj;
+extern SDFInfo SDFInfoObj;
+static double ValueTol = 0.025; 
+
 static double ProjectionLength(double cur_s, const Vector3 & InitDir, const Vector3 & GoalDir){
   // This function is mainly used for hand contact planning.
   double x = GoalDir.dot(InitDir);
@@ -35,17 +39,36 @@ std::vector<double> StagePlanningComputation( double sVal, Robot & SimRobotInner
 
   std::vector<double> StageIKVec = {sVal, EndEffectorProjx, EndEffectorProjy, EndEffectorProjz}; 
   
-  std::string ConfigPath = "./";
-  std::string OptConfigFile = "Before.config";
-  RobotConfigWriter(SimRobotInner.q, ConfigPath, OptConfigFile);
+  // std::string ConfigPath = "./";
+  // std::string OptConfigFile = "Before.config";
+  // RobotConfigWriter(SimRobotInner.q, ConfigPath, OptConfigFile);
 
   std::vector<double> UpdatedConfig = StageIKOptimization(SimRobotInner, SwingLinkInfoIndex,
                                                           SwingLinkChain, 
                                                           SelfCollisionInfoObj,  
                                                           StageIKVector3Vec, 
                                                           StageIKVec, StagePlanningFlag);
-  OptConfigFile = "After.config";
-  RobotConfigWriter(UpdatedConfig, ConfigPath, OptConfigFile);
+  // OptConfigFile = "After.config";
+  // RobotConfigWriter(UpdatedConfig, ConfigPath, OptConfigFile);
 
+  if((sVal * sVal>1.0 - ValueTol) && (StagePlanningFlag)){
+      // Environment Penetration Constraint
+      SimRobotInner.UpdateConfig(Config(UpdatedConfig));
+      std::vector<double> EndEffectorDist;
+      for (int i = 0; i < LinkInfoObj[SwingLinkInfoIndex].LocalContacts.size(); i++){
+        Vector3 LinkiPjPos;
+        SimRobotInner.GetWorldPosition( LinkInfoObj[SwingLinkInfoIndex].LocalContacts[i], 
+                                        LinkInfoObj[SwingLinkInfoIndex].LinkIndex, 
+                                        LinkiPjPos);
+        double EndEffectorDist_i = SDFInfoObj.SignedDistance(LinkiPjPos);
+        EndEffectorDist.push_back(EndEffectorDist_i);
+      }
+      double EndEffectorDistMin = *std::max_element(EndEffectorDist.begin(), EndEffectorDist.end());
+      if(EndEffectorDistMin * EndEffectorDistMin < ValueTol * ValueTol) StagePlanningFlag = true;
+      else{
+        std::printf("End Effector Should Contact The Environment But Not, and Its Distance Is %f\n", EndEffectorDistMin);
+        StagePlanningFlag = false;
+      }
+  }
   return UpdatedConfig;
 }

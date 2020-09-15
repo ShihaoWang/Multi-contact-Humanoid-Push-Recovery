@@ -98,50 +98,61 @@ static std::vector<Vector3> OptimalContactFinder(const std::vector<Vector3> & Su
       OptimalContactQueue.pop();
     }
   }
-  // Vector3Writer(CandidateContacts, "OptimalContact");
-  // Vector3Writer(CandidateContactWeights, "OptimalContactWeights");
+  Vector3Writer(CandidateContacts, "OptimalContact");
+  Vector3Writer(CandidateContactWeights, "OptimalContactWeights");
   SimParaObj.DataRecorderObj.setCCSData(CandidateContacts, CandidateContactWeights, SelectedContacts);
   return SelectedContacts;
 }
 
-std::vector<Vector3> OptimalContactSearcher(const Robot & SimRobot, const PIPInfo & PIPObj, const ContactForm & ContactFormObj, SimPara & SimParaObj, double ForwardTime){
+std::vector<Vector3> OptimalContactSearcher(const Robot & SimRobotInner, const PIPInfo & PIPObj, const ContactForm & ContactFormObj, SimPara & SimParaObj, Config & UpdatedConfig, double ForwardTime){
   std::vector<Vector3> OptimalContact;
   Vector3 COMPos, COMVel;
-  getCentroidalState(SimRobot, COMPos, COMVel);
+  getCentroidalState(SimRobotInner, COMPos, COMVel);
   
-  // InvertedPendulumInfo InvertedPendulumObj(PIPObj.L, PIPObj.g, PIPObj.theta, PIPObj.thetadot, COMPos, COMVel);
-  // InvertedPendulumObj.setEdges(PIPObj.edge_a, PIPObj.edge_b);
+  InvertedPendulumInfo InvertedPendulumObj(PIPObj.L, PIPObj.g, PIPObj.theta, PIPObj.thetadot, COMPos, COMVel);
+  InvertedPendulumObj.setEdges(PIPObj.edge_a, PIPObj.edge_b);
+       
+  bool TouchDownFlag, PenetrationFlag;
+  Robot SimRobot = SimRobotInner;
+  UpdatedConfig = WholeBodyDynamicsIntegrator(SimRobot, SimParaObj.getSwingLinkInfoIndex(), 
+                                              InvertedPendulumObj, ForwardTime, 
+                                              TouchDownFlag, PenetrationFlag);
   
-  // double ForwardTime = SimParaObj.ForwardDurationSeed;
-     
-  // bool MotionFlag = true;
-  // Config UpdatedConfig  = WholeBodyDynamicsIntegrator(SimRobot, InvertedPendulumObj, ForwardTime, MotionFlag);
-  // SimRobot.UpdateConfig(UpdatedConfig);
-  // if(!MotionFlag){
-  //   return OptimalContact;
-  // } 
+  SimRobot.UpdateConfig(UpdatedConfig);
+  COMPos = InvertedPendulumObj.COMPos;
+  COMVel = InvertedPendulumObj.COMVel;
 
-  // COMPos = InvertedPendulumObj.COMPos;
-  // COMVel = InvertedPendulumObj.COMVel;
+  // std::string ConfigPath = "./";
+  // std::string OptConfigFile = "UpdatedConfigContactSearch.config";
+  // RobotConfigWriter(UpdatedConfig, ConfigPath, OptConfigFile);
 
   //  0. Reachable with respect to the pivotal joint
   std::vector<Vector3> ReachableContacts = ReachabilityMapObj.ReachablePointsFinder(SimRobot, ContactFormObj.SwingLinkInfoIndex, SDFInfoObj);
-  if(!ReachableContacts.size()) return OptimalContact;
+  if(!ReachableContacts.size()){
+    std::printf("ReachableContacts Size Zero!\n");
+    return OptimalContact;
+  } 
 
   // 1. Self-collision from other end effectors
   std::vector<std::pair<Vector3, double>> ContactFreeInfoVec = ContactFreeInfoFn(SimRobot, ContactFormObj.FixedContactStatusInfo);
   std::vector<Vector3> CollisionFreeContacts = ReachabilityMapObj.ContactFreePointsFinder(ReachabilityMapObj.EndEffectorGeometryRadius[ContactFormObj.SwingLinkInfoIndex], ReachableContacts, ContactFreeInfoVec);
-  if(!CollisionFreeContacts.size()) return OptimalContact;
+  if(!CollisionFreeContacts.size()){
+    std::printf("CollisionFreeContacts Size Zero!\n");
+    return OptimalContact;
+  } 
 
   // 2. Supportive
   std::vector<Vector3> SupportiveContacts = SupportContactFinder(PIPObj, CollisionFreeContacts);
-  if(!SupportiveContacts.size()) return OptimalContact;
+  if(!SupportiveContacts.size()){
+    std::printf("SupportiveContacts Size Zero!\n");
+    return OptimalContact;
+  } 
 
   SimParaObj.DataRecorderObj.setRCSData(ReachableContacts, CollisionFreeContacts, SupportiveContacts);
 
-  // Vector3Writer(ReachableContacts, "ReachableContacts");
-  // Vector3Writer(CollisionFreeContacts, "CollisionFreeContacts");
-  // Vector3Writer(SupportiveContacts, "SupportiveContacts");
+  Vector3Writer(ReachableContacts, "ReachableContacts");
+  Vector3Writer(CollisionFreeContacts, "CollisionFreeContacts");
+  Vector3Writer(SupportiveContacts, "SupportiveContacts");
 
   std::vector<Vector3> FixedContactPos;
   for (int i = 0; i < LinkInfoObj.size(); i++){
@@ -157,7 +168,10 @@ std::vector<Vector3> OptimalContactSearcher(const Robot & SimRobot, const PIPInf
   // 3. Optimal Contact
   int CutOffNo = 5;
   OptimalContact = OptimalContactFinder(SupportiveContacts, FixedContactPos, COMPos, COMVel, CutOffNo, SimParaObj);
-  if(!OptimalContact.size()) return OptimalContact;
+  if(!OptimalContact.size()){
+    std::printf("OptimalContact Size Zero!\n");
+    return OptimalContact;
+  }
 
   return OptimalContact;
 }

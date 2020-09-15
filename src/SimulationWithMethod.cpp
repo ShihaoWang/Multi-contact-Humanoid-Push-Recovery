@@ -48,8 +48,8 @@ int SimulationWithMethod(WorldSimulation & Sim, const std::vector<ContactStatusI
     std::vector<Vector3> ActContactPos = ActiveContactFinder(SimRobot, curContactInfo);
     std::vector<PIPInfo> PIPTotal = PIPGenerator(COMPos, COMVel, ActContactPos);
     ContactPolytopeWriter(ActContactPos, PIPTotal, SimParaObj);
-    SelfCollisionInfoObj.SelfCollisionBoundingBoxesUpdate(SimRobot);
-
+    SelfCollisionInfoObj.SelfCollisionBoundingBoxesUpdate(SimRobot); double Dist; Vector3 DistGrad;
+    
     if(!OverallFailureFlag){
       double FailureMetric = FailureMetricEval(PIPTotal);
       if(!CtrlFlag){
